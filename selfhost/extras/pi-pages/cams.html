@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EMON Cameras</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="../vendor/leaflet.css">
+<style>
+/* EMON Cameras: every public camera in /local/cams.json (built by ~/services/emon-feeds/cams.py).
+   Light on purpose: the list and the map only ever show cameras for the place you picked, and a
+   camera's picture or video loads only when you click it. Source of this page: ~/www/emon-local/cams/ */
+:root { --bg:#0d1014; --panel:#151a21; --panel2:#1c232c; --line:#2a333f; --text:#e6ebf1; --muted:#8d99a8; --accent:#3ee0c5; color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; display: flex; flex-direction: column; }
+button, select, input { font: inherit; color: inherit; }
+header { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--line); }
+header b { letter-spacing: .08em; font-size: 16px; }
+header select, header input { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; min-width: 0; }
+header input { flex: 1 1 160px; }
+#status { color: var(--muted); font-size: 12px; margin-left: auto; }
+main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(260px, 340px) 1fr; }
+#list { overflow-y: auto; border-right: 1px solid var(--line); background: var(--panel); margin: 0; padding: 0; list-style: none; }
+#list li button { display: block; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 8px 12px; cursor: pointer; }
+#list li button:hover, #list li button:focus-visible, #list li button[aria-current="true"] { background: var(--panel2); outline: none; }
+#list .n { font-weight: 600; }
+#list .m { color: var(--muted); font-size: 12px; }
+#list .tag { color: var(--accent); font-size: 11px; margin-left: 6px; }
+#list .note { padding: 12px; color: var(--muted); }
+#right { position: relative; min-height: 0; display: grid; grid-template-rows: 1fr; }
+#map { min-height: 0; background: #0a0d10; }
+#viewer { position: absolute; left: 12px; right: 12px; bottom: 12px; max-width: 720px; margin-left: auto; background: #000; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; z-index: 1000; box-shadow: 0 8px 30px rgba(0,0,0,.6); }
+#viewer .bar { display: flex; gap: 8px; align-items: center; padding: 6px 10px; background: var(--panel); font-size: 13px; }
+#viewer .bar span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#viewer .bar button { background: none; border: 0; cursor: pointer; font-size: 16px; }
+#vbody { aspect-ratio: 16 / 9; display: grid; place-items: center; }
+#vbody video, #vbody iframe, #vbody img { width: 100%; height: 100%; border: 0; display: block; object-fit: contain; background: #000; }
+#vbody .msg { color: var(--muted); padding: 20px; text-align: center; }
+[hidden] { display: none !important; }
+.leaflet-container { font: inherit; background: #0a0d10; }
+.leaflet-bar a { background: var(--panel); color: var(--text); border-color: var(--line); }
+@media (max-width: 760px) { main { grid-template-columns: 1fr; grid-template-rows: 45vh 1fr; } #right { order: -1; } #list { border-right: 0; border-top: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<header>
+  <b>EMON CAMERAS</b>
+  <label for="place" hidden>Place</label>
+  <select id="place" aria-label="Place"></select>
+  <select id="kind" aria-label="Type">
+    <option value="">All types</option>
+    <option value="live">Live video only</option>
+    <option value="photo">Photos only</option>
+  </select>
+  <input id="q" type="search" placeholder="Search name or road…" aria-label="Search cameras">
+  <span id="status" aria-live="polite">Loading cameras…</span>
+</header>
+<main>
+  <ul id="list"><li class="note">Loading…</li></ul>
+  <div id="right">
+    <div id="map"></div>
+    <div id="viewer" hidden>
+      <div class="bar"><span id="vtitle"></span><button type="button" id="vclose" aria-label="Close camera">✕</button></div>
+      <div id="vbody"></div>
+    </div>
+  </div>
+</main>
+<script src="../vendor/leaflet.js"></script>
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const MAX_LIST = 300, MAX_MARKERS = 600;
+  // Her cities first (most to least important), then every state / province in the list.
+  const CITIES = [
+    ['San Francisco', 37.775, -122.42, 12], ['Oakland / East Bay', 37.81, -122.25, 12], ['Seattle', 47.61, -122.33, 12],
+    ['Miami', 25.78, -80.21, 11], ['New York City', 40.74, -73.98, 11], ['Washington DC', 38.9, -77.03, 11],
+    ['Chicago', 41.88, -87.65, 11], ['Portland', 45.52, -122.67, 11], ['Vancouver', 49.27, -123.12, 11],
+    ['Quebec City', 46.81, -71.21, 11], ['Dallas', 32.78, -96.8, 11], ['Denver', 39.74, -104.99, 11],
+    ['Mexico City', 19.43, -99.13, 11], ['Las Vegas', 36.17, -115.14, 11], ['Charlotte', 35.23, -80.84, 11],
+    ['Los Angeles', 34.05, -118.25, 11], ['Santa Cruz', 36.97, -122.03, 12], ['Florida Keys', 24.75, -81.2, 10],
+  ];
+  const STATE_NAMES = { AL:'Alabama', AK:'Alaska', AZ:'Arizona', AR:'Arkansas', CA:'California', CO:'Colorado', CT:'Connecticut', DE:'Delaware', DC:'Washington DC', FL:'Florida', GA:'Georgia', HI:'Hawaii', ID:'Idaho', IL:'Illinois', IN:'Indiana', IA:'Iowa', KS:'Kansas', KY:'Kentucky', LA:'Louisiana', ME:'Maine', MD:'Maryland', MA:'Massachusetts', MI:'Michigan', MN:'Minnesota', MS:'Mississippi', MO:'Missouri', MT:'Montana', NE:'Nebraska', NV:'Nevada', NH:'New Hampshire', NJ:'New Jersey', NM:'New Mexico', NY:'New York', NC:'North Carolina', ND:'North Dakota', OH:'Ohio', OK:'Oklahoma', OR:'Oregon', PA:'Pennsylvania', RI:'Rhode Island', SC:'South Carolina', SD:'South Dakota', TN:'Tennessee', TX:'Texas', UT:'Utah', VT:'Vermont', VA:'Virginia', WA:'Washington', WV:'West Virginia', WI:'Wisconsin', WY:'Wyoming',
+    AB:'Alberta', BC:'British Columbia', MB:'Manitoba', NB:'New Brunswick', NL:'Newfoundland', NS:'Nova Scotia', ON:'Ontario', PE:'Prince Edward Island', QC:'Quebec', SK:'Saskatchewan', YT:'Yukon', NT:'Northwest Territories', NU:'Nunavut' };
+
+  const map = L.map('map', { preferCanvas: true, minZoom: 3 }).setView([39.5, -98], 4);
+  L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16, attribution: 'Base map &copy; Esri, &copy; OpenStreetMap contributors' }).addTo(map);
+  L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16 }).addTo(map);
+  const markers = L.layerGroup().addTo(map);
+
+  let cams = [];
+  let shown = [];
+  let current = null;
+  const isLive = (c) => !!(c.hls || c.yt);
+
+  function inView() {
+    const b = map.getBounds();
+    const kind = $('kind').value, q = $('q').value.trim().toLowerCase();
+    const out = [];
+    for (const c of cams) {
+      if (!b.contains([c.lat, c.lon])) continue;
+      if (kind === 'live' && !isLive(c)) continue;
+      if (kind === 'photo' && isLive(c)) continue;
+      if (q && !((c.name || '') + ' ' + (c.city || '') + ' ' + (c.src || '')).toLowerCase().includes(q)) continue;
+      out.push(c);
+    }
+    // live video first, then nearest to the middle of the map
+    const ctr = map.getCenter();
+    out.sort((a, b2) => (isLive(b2) - isLive(a)) || (Math.hypot(a.lat - ctr.lat, a.lon - ctr.lng) - Math.hypot(b2.lat - ctr.lat, b2.lon - ctr.lng)));
+    return out;
+  }
+
+  function render() {
+    shown = inView();
+    const list = $('list');
+    list.textContent = '';
+    markers.clearLayers();
+    if (map.getZoom() < 7 && shown.length > MAX_MARKERS && !$('q').value.trim()) {
+      const li = document.createElement('li'); li.className = 'note';
+      li.textContent = shown.length.toLocaleString() + ' cameras in this view. Pick a place above or zoom in to list them.';
+      list.append(li);
+      $('status').textContent = cams.length.toLocaleString() + ' cameras total';
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    shown.slice(0, MAX_LIST).forEach((c) => {
+      const li = document.createElement('li');
+      const b = document.createElement('button'); b.type = 'button';
+      if (current && current.id === c.id) b.setAttribute('aria-current', 'true');
+      const n = document.createElement('div'); n.className = 'n'; n.textContent = c.name || 'Camera';
+      const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = isLive(c) ? 'LIVE VIDEO' : 'photo'; n.append(tag);
+      const m = document.createElement('div'); m.className = 'm'; m.textContent = [c.city, c.state, c.src].filter(Boolean).join(' · ');
+      b.append(n, m);
+      b.addEventListener('click', () => openCam(c, true));
+      li.append(b); frag.append(li);
+    });
+    if (!shown.length) { const li = document.createElement('li'); li.className = 'note'; li.textContent = 'No cameras here. Move the map or pick another place.'; frag.append(li); }
+    list.append(frag);
+    shown.slice(0, MAX_MARKERS).forEach((c) => {
+      L.circleMarker([c.lat, c.lon], { radius: isLive(c) ? 5 : 4, color: '#000', weight: 1, fillColor: isLive(c) ? '#3ee0c5' : '#ffd23f', fillOpacity: 0.95 })
+        .bindTooltip(c.name || 'Camera').on('click', () => openCam(c, false)).addTo(markers);
+    });
+    $('status').textContent = shown.length.toLocaleString() + ' here' + (shown.length > MAX_LIST ? ' (showing the nearest ' + MAX_LIST + ')' : '') + ' · ' + cams.length.toLocaleString() + ' total';
+  }
+
+  // ---- viewer ----
+  let player = null, imgTimer = null, hlsLoad = null;
+  function loadHls() {
+    if (!hlsLoad) hlsLoad = new Promise((res, rej) => { const s = document.createElement('script'); s.src = '../vendor/hls.min.js'; s.onload = () => res(window.Hls); s.onerror = rej; document.head.append(s); });
+    return hlsLoad;
+  }
+  function closeViewer() {
+    if (player) { try { player.destroy(); } catch (e) { /* gone */ } player = null; }
+    if (imgTimer) { clearInterval(imgTimer); imgTimer = null; }
+    $('vbody').textContent = ''; $('viewer').hidden = true; current = null;
+  }
+  const fail = (text) => { const d = document.createElement('div'); d.className = 'msg'; d.textContent = text; $('vbody').textContent = ''; $('vbody').append(d); };
+  async function openCam(c, pan) {
+    closeViewer();
+    current = c;
+    $('viewer').hidden = false;
+    $('vtitle').textContent = [c.name, c.city, c.state, c.src].filter(Boolean).join(' · ');
+    if (pan) map.panTo([c.lat, c.lon]);
+    const body = $('vbody');
+    if (c.yt) {
+      const f = document.createElement('iframe');
+      f.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(c.yt) + '?autoplay=1&mute=1&playsinline=1&rel=0';
+      f.allow = 'autoplay; encrypted-media; picture-in-picture'; f.allowFullscreen = true; f.title = c.name || 'Camera';
+      body.append(f); return;
+    }
+    if (c.img) {
+      const im = document.createElement('img'); im.alt = c.name || 'Camera'; im.referrerPolicy = 'no-referrer';
+      const bust = () => { im.src = c.img + (c.img.includes('?') ? '&' : '?') + 't=' + Date.now(); };
+      im.onerror = () => { if (imgTimer) { clearInterval(imgTimer); imgTimer = null; } fail('This camera is not sending a picture right now.'); };
+      bust(); body.append(im);
+      imgTimer = setInterval(bust, Math.max(15, Number(c.refresh) || 60) * 1000);
+      return;
+    }
+    const v = document.createElement('video'); v.muted = true; v.autoplay = true; v.playsInline = true; v.controls = true; body.append(v);
+    const dead = () => fail('This camera is not sending video right now. Try another one nearby.');
+    if (v.canPlayType('application/vnd.apple.mpegurl')) { v.src = c.hls; v.onerror = dead; return; }
+    try {
+      const Hls = await loadHls();
+      if (!Hls || !Hls.isSupported()) { dead(); return; }
+      player = new Hls();
+      player.on(Hls.Events.ERROR, (_e, d) => { if (d.fatal) dead(); });
+      player.loadSource(c.hls); player.attachMedia(v);
+    } catch (e) { dead(); }
+  }
+  $('vclose').addEventListener('click', closeViewer);
+
+  // ---- controls ----
+  function fillPlaces() {
+    const sel = $('place');
+    const g1 = document.createElement('optgroup'); g1.label = 'Your cities';
+    CITIES.forEach(([name, lat, lon, z], i) => { const o = document.createElement('option'); o.value = 'c' + i; o.textContent = name; g1.append(o); });
+    const g2 = document.createElement('optgroup'); g2.label = 'States and provinces';
+    const counts = {};
+    for (const c of cams) if (c.state) counts[c.state] = (counts[c.state] || 0) + 1;
+    Object.keys(counts).sort((a, b) => (STATE_NAMES[a] || a).localeCompare(STATE_NAMES[b] || b)).forEach((s) => {
+      const o = document.createElement('option'); o.value = 's' + s; o.textContent = (STATE_NAMES[s] || s) + ' (' + counts[s].toLocaleString() + ')'; g2.append(o);
+    });
+    sel.append(g1, g2);
+  }
+  function goPlace() {
+    const v = $('place').value;
+    try { localStorage.setItem('emon-cams-place', v); } catch (e) { /* private window */ }
+    if (v[0] === 'c') { const [, lat, lon, z] = CITIES[Number(v.slice(1))]; map.setView([lat, lon], z); return; }
+    const st = v.slice(1); const pts = cams.filter((c) => c.state === st).map((c) => [c.lat, c.lon]);
+    if (pts.length) map.fitBounds(pts, { padding: [20, 20] });
+  }
+  $('place').addEventListener('change', goPlace);
+  $('kind').addEventListener('change', render);
+  let qt = null;
+  $('q').addEventListener('input', () => { clearTimeout(qt); qt = setTimeout(render, 250); });
+  let mt = null;
+  map.on('moveend', () => { clearTimeout(mt); mt = setTimeout(render, 150); });
+
+  fetch('../cams.json').then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }).then((d) => {
+    cams = (d.cams || []).filter((c) => Number.isFinite(c.lat) && Number.isFinite(c.lon) && (c.hls || c.yt || c.img));
+    fillPlaces();
+    let saved = null; try { saved = localStorage.getItem('emon-cams-place'); } catch (e) { /* private window */ }
+    if (saved && [...$('place').options].some((o) => o.value === saved)) $('place').value = saved;
+    goPlace();
+    render();
+  }).catch((e) => { $('status').textContent = 'Could not load the camera list (' + e.message + ').'; $('list').innerHTML = '<li class="note">Could not load the camera list.</li>'; });
+})();
+</script>
+</body>
+</html>

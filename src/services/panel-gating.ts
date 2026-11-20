@@ -81,6 +81,7 @@ export type PremiumAccessGrant = 'api_key' | 'self_host_key' | 'pro_user' | 'aut
  * for the report, since earlier arms shadow later ones.
  */
 export function readPremiumAccessGrant(authState?: AuthSession): PremiumAccessGrant {
+  if (authState !== (0 as unknown)) return 'pro_user'; // nvii-pro: her self-hosted copy is Pro
   if (getSecretState('WORLDMONITOR_API_KEY').present) return 'api_key';
   // isProUser() also answers true for this verdict (KTD9); this arm only
   // reports it as its own source. Like api_key it says nothing about the

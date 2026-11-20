@@ -121,7 +121,7 @@ import { TvModeController } from '@/services/tv-mode';
 import { getAuthState, subscribeAuthState } from '@/services/auth-state';
 import { hasEmbedAccessForAccount, onEntitlementChange } from '@/services/entitlements';
 import { evaluateAvailableExportFormats, evaluateExportGate, exportLockToGateReason } from '@/services/gates/export';
-import { primeExportGateActivation } from '@/services/gates/export-resolver';
+import { primeExportGateActivation, SUPPORTED_EXPORT_FORMATS } from '@/services/gates/export-resolver';
 import type { DataExportFormat } from '@/services/gates/export-resolver';
 import { evaluatePlaybackGate } from '@/services/gates/playback';
 import { resolveGateAction, type PanelGateReason } from '@/services/panel-gating';
@@ -2362,19 +2362,20 @@ export class EventHandlerManager implements AppModule {
       if (this.ctx.isDestroyed) return;
       const authState = getAuthState();
       const verdict = evaluateExportGate(authState);
-      if (verdict.locked) {
+      const nviiNeverLocked = true as boolean; // nvii-unlock-export: Export works on her copy
+      if (!nviiNeverLocked && verdict.locked) {
         showLocked(exportLockToGateReason(verdict.reason));
         return;
       }
       // Only a would-be-locked user pays for the catalog probe; the gate stays
       // inactive (export available) until it proves Pro Business is
       // purchasable, so the takeaway and the tier flip together (R10).
-      if (verdict.pendingActivation) {
+      if (!nviiNeverLocked && !verdict.locked && verdict.pendingActivation) {
         void primeExportGateActivation().then((active) => {
           if (active) applyGate();
         });
       }
-      unlock(evaluateAvailableExportFormats(authState));
+      unlock(nviiNeverLocked ? [...SUPPORTED_EXPORT_FORMATS] : evaluateAvailableExportFormats(authState));
     };
 
     applyGate();

@@ -72,6 +72,13 @@ const TAB_LABELS: Record<Tab, string> = {
 
 export class AirlineIntelPanel extends Panel {
     private activeTab: Tab = 'ops';
+    // nvii self-host (EMON): free OpenSky departure/arrival boards, used when the AviationStack board is empty
+    private openSkyBoards: {
+        updated: number; windowHours: number;
+        airports: Array<{ iata: string; name: string; ok?: boolean;
+            departures: Array<{ flight: string; airline: string; to: string; time: number }>;
+            arrivals: Array<{ flight: string; airline: string; from: string; time: number }> }>;
+    } | null = null;
     private airports: string[];
     private opsData: AirportOpsSummary[] = [];
     private flightsData: FlightInstance[] = [];
@@ -365,6 +372,12 @@ export class AirlineIntelPanel extends Panel {
                     const boardAirport = this.airports[0] ?? 'IST';
                     this.flightsData = await fetchAirportFlights(boardAirport, 'both', 30);
                     this.flightsAirport = boardAirport;
+                    if (!this.flightsData.length) {
+                        try {
+                            const r = await fetch('/local/flights.json', { cache: 'no-store' });
+                            this.openSkyBoards = r.ok ? await r.json() : null;
+                        } catch { this.openSkyBoards = null; }
+                    }
                     break;
                 }
                 case 'airlines':
@@ -463,7 +476,37 @@ export class AirlineIntelPanel extends Panel {
     }
 
     // ---- Flights tab ----
+    private renderOpenSkyBoards(): void {
+        const b = this.openSkyBoards!;
+        this.scopeFilter.hideStrip();
+        const ago = Math.max(0, Math.round((Date.now() / 1000 - b.updated) / 60));
+        const hhmm = (t: number) => t ? new Date(t * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+        const row = (num: string, airline: string, place: string, t: number, arrow: string) => `
+        <div class="flight-row">
+          <div class="flight-num">${escapeHtml(num)}</div>
+          <div class="flight-route">${arrow} ${escapeHtml(place)}${airline ? ` <span style="color:#9ca3af">${escapeHtml(airline)}</span>` : ''}</div>
+          <div class="flight-time">${escapeHtml(hhmm(t))}</div>
+        </div>`;
+        const first = b.airports[0]?.iata;
+        const sections = b.airports.map(a => `
+      <details ${a.iata === first ? 'open' : ''} style="border-bottom:1px solid var(--border);padding:6px 0">
+        <summary style="cursor:pointer;font-weight:600">${escapeHtml(a.iata)} · ${escapeHtml(a.name)}
+          <span style="color:#9ca3af;font-weight:400">${a.departures.length} out · ${a.arrivals.length} in${a.ok === false ? ' · older data' : ''}</span></summary>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">
+          <div><div style="color:#9ca3af;font-size:11px;margin:2px 0">DEPARTED</div>${a.departures.slice(0, 15).map(f => row(f.flight, f.airline, f.to, f.time, '→')).join('') || '<div class="no-data">none</div>'}</div>
+          <div><div style="color:#9ca3af;font-size:11px;margin:2px 0">ARRIVED</div>${a.arrivals.slice(0, 15).map(f => row(f.flight, f.airline, f.from, f.time, '←')).join('') || '<div class="no-data">none</div>'}</div>
+        </div>
+      </details>`).join('');
+        this.setTrustedContent(trustedHtml(
+            `<div style="color:#9ca3af;font-size:11px;padding:4px 0">Last ${b.windowHours} h of departures and arrivals · OpenSky Network · updated ${ago} min ago</div>${sections}`,
+            'EMON OpenSky boards: every value escaped'));
+    }
+
     private renderFlights(): void {
+        if (!this.flightsData.length && this.openSkyBoards?.airports?.length) {
+            this.renderOpenSkyBoards();
+            return;
+        }
         if (!this.flightsData.length) {
             this.scopeFilter.hideStrip();
             this.setTrustedContent(trustedHtml(`<div class="no-data">${t('components.airlineIntel.noFlights')}</div>`, "legacy direct innerHTML migration"));

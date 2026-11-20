@@ -388,7 +388,26 @@ export function selectEcccAlerts(features) {
  * severity rank. A missing/failed source is treated as [] so the other still
  * publishes.
  */
+// LOCAL-FIRST (her copy, 2026-11-19): alerts whose areaDesc matches WM_LOCAL_ALERT_PATTERN are always
+// kept, on top of the global cap. Without this, the 50-slot cap ranked by severity drops every 'Minor'
+// advisory nationwide, e.g. the SF Bay Shoreline Coastal Flood Advisory she could see out her window.
+const LOCAL_ALERT_PATTERN = new RegExp(
+  process.env.WM_LOCAL_ALERT_PATTERN ||
+    'San Francisco|Alameda|Contra Costa|Marin|San Mateo|Santa Clara|Sonoma|Napa|Solano|Santa Cruz|East Bay|North Bay|South Bay|Bay Shoreline|Oakland|Berkeley',
+  'i',
+);
+export const LOCAL_ALERT_MAX = 60;
+function isLocalAlert(alert) {
+  return LOCAL_ALERT_PATTERN.test(String(alert?.areaDesc || ''));
+}
 export function mergeAlertSources(parts = {}, { totalLimit = MAX_ALERTS, perSourceFloor = PER_SOURCE_FLOOR } = {}) {
+  const all = Array.isArray(parts.nws) ? parts.nws : []; // US NWS only: the names also match towns abroad
+  const local = sortBySeverityThenStable(all.filter(isLocalAlert)).slice(0, LOCAL_ALERT_MAX);
+  const localSet = new Set(local);
+  const notLocal = (a) => (Array.isArray(a) ? a.filter((x) => !localSet.has(x)) : []);
+  return [...local, ...mergeGlobalAlerts({ nws: notLocal(parts.nws), eccc: notLocal(parts.eccc), swic: notLocal(parts.swic) }, { totalLimit, perSourceFloor })];
+}
+function mergeGlobalAlerts(parts = {}, { totalLimit = MAX_ALERTS, perSourceFloor = PER_SOURCE_FLOOR } = {}) {
   const sources = [
     sortBySeverityThenStable(Array.isArray(parts.nws) ? parts.nws : []),
     sortBySeverityThenStable(Array.isArray(parts.eccc) ? parts.eccc : []),

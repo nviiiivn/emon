@@ -46,6 +46,11 @@ export const SITE_VARIANT: string = (() => {
 
   // window.location, not bare `location`: node-based tests stub `window`
   // without a global `location`, and this module must stay importable there.
+  // nvii self-host: edition from path (emon.alola.lol/tech, /finance, /commodity, /energy, /good-news)
+  const pathEdition = ({ tech: 'tech', finance: 'finance', commodity: 'commodity', energy: 'energy',
+    happy: 'happy', 'good-news': 'happy' } as Record<string, string>)[
+    (window.location?.pathname || '').split('/')[1]?.toLowerCase() || ''];
+  if (pathEdition) return pathEdition;
   const h = window.location?.hostname;
   if (!h) return buildVariant;
   if (h.startsWith('tech.')) return 'tech';

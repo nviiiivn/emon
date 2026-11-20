@@ -345,7 +345,7 @@ export class MapPopup {
       let eventCompare: EventCompareHooks | undefined;
       let unsubscribeAuth: (() => void) | null = null;
       if (eventMs !== null) {
-        const access = hasPremiumAccess(getAuthState()) ? 'open' : 'locked';
+        const access = 'open' as 'open' | 'locked'; // nvii self-host: before/after is never locked
         if (access === 'locked') trackGateHit('orbital-event-compare');
         eventCompare = {
           eventMs,

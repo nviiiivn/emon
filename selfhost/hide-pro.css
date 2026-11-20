@@ -1,0 +1,13 @@
+/* nvii self-host. Earlier today this file hid the Pro upsell, Sign in, Focus, Export, Follow and every
+   worldmonitor.app link. 2026-11-19 her correction: nothing hidden; those pages and features are hers.
+   Kept (empty) because nginx links it into every page. */
+
+/* 2026-11-19 18:2x her FINAL rule: never show the Pro banner, Upgrade, Sign in, Unlock or anything about Pro.
+   Pro/Focus/Export are unlocked in her build (selfhost/unlock_pro.py); this hides what is left. */
+#proBannerSlot, .pro-banner-slot, .pro-banner, .pro-banner-cta, .mobile-auth-fallback, .export-locked-cta { display: none !important; }
+
+/* nvii 2026-11-20: satellite feature leftovers that point at the paid plan */
+.popup-imagery-compare-locked, .ies-alert-cta { display: none !important; }
+
+/* nvii 2026-11-20: this copy is Pro, so the little PRO labels mean nothing */
+.widget-pro-badge, .panel-pro-badge { display: none !important; }

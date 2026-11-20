@@ -1,0 +1,20 @@
+# nvii self-host changes (2026-11-19): hide the paid Pro upsell; add her YouTube news channels to Live News.
+# selfhost/nginx.conf.template = the image's /etc/nginx/nginx.conf.template (copy: selfhost/nginx.conf.template.from-image) + 3 sub_filter lines in "location /".
+# If an upstream update changes docker/nginx.conf.template, docker cp it out again and re-add those lines.
+services:
+  worldmonitor:
+    # nvii-local-ai (2026-11-20): nginx adds this as the operator key on the AI routes (see selfhost/nginx.conf.template)
+    environment:
+      # nvii 2026-11-20: server half of the satellite "evidence" feature (fire popup); the web build sets VITE_ENABLE_ORBITAL_WATCH=true
+      ORBITAL_WATCH_ENABLED: "true"
+      LOCAL_API_TOKEN: "${WORLDMONITOR_VALID_KEYS:-}"
+      # Ollama provider (first in the chain; turns model "thinking" off so answers are not empty)
+      OLLAMA_API_URL: "http://wm-llm:11434"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-gemma4:12b}"
+    volumes:
+      - ./selfhost/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
+      # web files built from this checkout with selfhost/patch_cams.py applied (SF, Oakland, Seattle webcams);
+      # rebuild: see ~/Sandbox/tmp/wm-build/build.sh, then copy its dist here
+      - ./selfhost/dist:/usr/share/nginx/html:ro
+      - ./selfhost/hide-pro.css:/usr/share/nginx/html/selfhost-hide-pro.css:ro
+      - ./selfhost/selfhost-channels.js:/usr/share/nginx/html/selfhost-channels.js:ro

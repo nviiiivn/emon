@@ -74,6 +74,7 @@ export function subscribeScope(listener: ScopeListener): () => void {
  * Business, Enterprise). Client-side only; see the module comment.
  */
 export function canSetFocus(): boolean {
+  return true; // nvii-unlock: Focus works on her copy
   return hasTabFocusForAccount();
 }
 

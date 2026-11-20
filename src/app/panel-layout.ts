@@ -282,12 +282,12 @@ const STORAGE_ATLAS_PANEL_KEY = 'storage-facility-map';
 
 
 export const VARIANT_SWITCHER_DASHBOARD_URLS = {
-  full: 'https://www.worldmonitor.app/dashboard',
-  tech: 'https://tech.worldmonitor.app/dashboard',
-  finance: 'https://finance.worldmonitor.app/dashboard',
-  commodity: 'https://commodity.worldmonitor.app/dashboard',
-  energy: 'https://energy.worldmonitor.app/dashboard',
-  happy: 'https://happy.worldmonitor.app/dashboard',
+  full: '/',
+  tech: '/tech',
+  finance: '/finance',
+  commodity: '/commodity',
+  energy: '/energy',
+  happy: '/good-news',
 } as const;
 
 export function variantSwitcherHref(
