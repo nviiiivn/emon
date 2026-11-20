@@ -18,6 +18,13 @@ if [ -f "$PROJECT_DIR/.env" ]; then
   . "$PROJECT_DIR/.env"
   set +a
 fi
+# nvii-local-ai (2026-11-20): optional seeder-only settings, read after .env. On this copy it leaves the
+# OpenRouter key out of the seeders so the forecast stages run on the local model instead of failing with 402.
+if [ -f "$PROJECT_DIR/.env.seeders" ]; then
+  set -a
+  . "$PROJECT_DIR/.env.seeders"
+  set +a
+fi
 
 UPSTASH_REDIS_REST_URL="${UPSTASH_REDIS_REST_URL:-http://localhost:8079}"
 # This script targets the LOCAL Docker REST proxy, so REDIS_TOKEN always

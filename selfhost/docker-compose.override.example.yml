@@ -11,6 +11,8 @@ services:
       # Ollama provider (first in the chain; turns model "thinking" off so answers are not empty)
       OLLAMA_API_URL: "http://wm-llm:11434"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-gemma4:12b}"
+      # .env LLM_API_URL points at 127.0.0.1 for the host seeders; inside the container only the Ollama provider is used
+      LLM_API_URL: ""
     volumes:
       - ./selfhost/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
       # web files built from this checkout with selfhost/patch_cams.py applied (SF, Oakland, Seattle webcams);
@@ -18,3 +20,8 @@ services:
       - ./selfhost/dist:/usr/share/nginx/html:ro
       - ./selfhost/hide-pro.css:/usr/share/nginx/html/selfhost-hide-pro.css:ro
       - ./selfhost/selfhost-channels.js:/usr/share/nginx/html/selfhost-channels.js:ro
+  # nvii-local-ai (2026-11-20): the relay classifies headlines with the same local model
+  ais-relay:
+    environment:
+      OLLAMA_API_URL: "http://wm-llm:11434"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-gemma4:12b}"
