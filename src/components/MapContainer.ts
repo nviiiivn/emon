@@ -413,7 +413,10 @@ export class MapContainer {
     // Keep the default mobile path on the lightweight SVG renderer. High-end
     // phones can still request globe mode explicitly via the persisted mode,
     // but they should not pull Deck/MapLibre before first paint by default.
-    if (this.isMobile && !this.preferDesktopRenderer) return false;
+    // nvii-mobile-fullmap-v1 (EMON, 2026-11-24): phones get the full MapLibre map too. The SVG fallback
+    // stops zooming at 10x the world view, so nothing closer than a state could be seen. Upstream line:
+    //   if (this.isMobile && !this.preferDesktopRenderer) return false;
+    if (this.preferDesktopRenderer) return this.hasWebGLSupport();
     if (!this.hasWebGLSupport()) return false;
     return true;
   }
@@ -1928,10 +1931,10 @@ export class MapContainer {
     }
   }
 
-  public flashLocation(lat: number, lon: number, durationMs?: number): void {
+  public flashLocation(lat: number, lon: number, durationMs?: number, info?: { title: string; source?: string; link?: string }): void { // nvii-flash-label
     if (this.useGlobe) { this.globeMap?.flashLocation(lat, lon, durationMs); return; }
     if (this.useDeckGL) {
-      this.deckGLMap?.flashLocation(lat, lon, durationMs);
+      this.deckGLMap?.flashLocation(lat, lon, durationMs, info);
     } else {
       this.svgMap?.flashLocation(lat, lon, durationMs);
     }

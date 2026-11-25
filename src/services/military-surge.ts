@@ -32,12 +32,29 @@ const ciiLookup = (code: string): number | null => {
   return cii;
 };
 
+// nvii-surge-smart-v1 (EMON, 2026-11-24): surge history survives page reloads (localStorage, this
+// browser only), no surge until 6 h of real tracking exists to compare against (instead of a guessed
+// "normal" of 3), and a surge has to hold 2 h before it shows. Delete historyStore/minBaselineHours/
+// sustainMs below to go back to upstream behaviour.
+const SURGE_HISTORY_KEY = 'emon-surge-history-v1';
+const surgeHistoryStore = {
+  load(): string | null {
+    try { return globalThis.localStorage?.getItem(SURGE_HISTORY_KEY) ?? null; } catch { return null; }
+  },
+  save(serialized: string): void {
+    try { globalThis.localStorage?.setItem(SURGE_HISTORY_KEY, serialized); } catch { /* storage blocked or full */ }
+  },
+};
+
 const engine = new MilitarySurgeEngine<MilitaryFlight>({
   newsContext: {
     getCorrelation: (countryCodes) => focalPointDetector.getNewsCorrelationContext(countryCodes),
     getFocalPoint: (countryCode) => focalPointDetector.getFocalPointForCountry(countryCode),
   },
   getCii: ciiLookup,
+  historyStore: surgeHistoryStore,
+  minBaselineHours: 6,
+  sustainMs: 2 * 60 * 60 * 1000,
 });
 
 export function analyzeFlightsForSurge(flights: MilitaryFlight[]): SurgeAlert[] {

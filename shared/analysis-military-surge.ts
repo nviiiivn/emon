@@ -77,6 +77,10 @@ export interface SurgeAlert {
   nearbyBases: string[];
   firstDetected: Date;
   lastUpdated: Date;
+  /** nvii-surge-smart-v1: hours of tracking the baseline was learned from (absent in upstream mode). */
+  baselineHours?: number;
+  /** nvii-surge-smart-v1: hours the count has stayed at surge level (absent in upstream mode). */
+  sustainedHours?: number;
 }
 
 export interface TheaterActivity {
@@ -113,10 +117,25 @@ export interface MilitarySurgeNewsContext {
 /** Country-instability lookup, injected for the same reason. */
 export type MilitarySurgeCiiLookup = (countryCode: string) => number | null;
 
+/** nvii-surge-smart-v1: where the engine keeps theater history between page loads. */
+export interface MilitarySurgeHistoryStore {
+  load(): string | null;
+  save(serialized: string): void;
+}
+
 export interface MilitarySurgeEngineOptions {
   now?: () => number;
   newsContext?: MilitarySurgeNewsContext | null;
   getCii?: MilitarySurgeCiiLookup | null;
+  /** nvii-surge-smart-v1: keep theater history across page loads (null = memory only, the upstream behaviour). */
+  historyStore?: MilitarySurgeHistoryStore | null;
+  /**
+   * nvii-surge-smart-v1: raise no surge until the baseline comes from real samples spanning at
+   * least this many hours. 0 = upstream behaviour (cold start compares against a guessed baseline).
+   */
+  minBaselineHours?: number;
+  /** nvii-surge-smart-v1: a surge has to hold this long before it alerts. 0 = alert on the first sample. */
+  sustainMs?: number;
 }
 
 // Sensitive regions where foreign military concentration is notable
@@ -215,6 +234,11 @@ export const PROXIMITY_RADIUS_KM = 150;
 
 const CLEANUP_INTERVAL = 60 * 60 * 1000;
 const MAX_HISTORY_HOURS = 72;
+/** nvii-surge-smart-v1: two samples further apart than this (page closed) do not count as one continuous surge. */
+const SUSTAIN_MAX_GAP_MS = 30 * 60 * 1000;
+/** nvii-surge-smart-v1: room for 72 h of samples at a few minutes apart when history is kept. */
+const STORED_HISTORY_MAX_SAMPLES = 1500;
+const HISTORY_STORE_VERSION = 1;
 
 export function getTheaterForBase(baseId: string): MilitaryTheater | null {
   for (const theater of THEATERS) {
@@ -457,7 +481,11 @@ export function surgeAlertToSignal(surge: SurgeAlert): MilitarySurgeSignal {
     type: 'military_surge',
     source: 'Military Flight Tracking',
     title: `${typeLabels[surge.type]} - ${surge.theater.name}`,
-    description: `${surge.currentCount} ${surge.type} aircraft detected (${surge.surgeMultiple.toFixed(1)}x baseline). ` +
+    // nvii-surge-smart-v1: say what "baseline" was and how long the jump has held, when the engine knows.
+    description: (surge.baselineHours !== undefined && surge.sustainedHours !== undefined
+      ? `${surge.currentCount} ${surge.type} aircraft detected (${surge.surgeMultiple.toFixed(1)}x the usual ${surge.baselineCount}, ` +
+        `learned from ${Math.round(surge.baselineHours)} h of tracking; held ${surge.sustainedHours.toFixed(1)} h). `
+      : `${surge.currentCount} ${surge.type} aircraft detected (${surge.surgeMultiple.toFixed(1)}x baseline). `) +
       `${aircraftList}. Near: ${surge.nearbyBases.slice(0, 3).join(', ')}`,
     severity,
     confidence,
@@ -705,12 +733,102 @@ export class MilitarySurgeEngine<TFlight extends MilitaryFlightInput = MilitaryF
   private readonly activeForeignPresence = new Map<string, ForeignPresenceAlert<TFlight>>();
   private readonly seenForeignAlerts = new Set<string>();
   private lastCleanup: number;
+  private readonly historyStore: MilitarySurgeHistoryStore | null;
+  private readonly minBaselineHours: number;
+  private readonly sustainMs: number;
+  private readonly maxSamples: number;
 
   constructor(options: MilitarySurgeEngineOptions = {}) {
     this.now = options.now ?? (() => Date.now());
     this.newsContext = options.newsContext ?? null;
     this.getCii = options.getCii ?? null;
     this.lastCleanup = this.now();
+    this.historyStore = options.historyStore ?? null;
+    this.minBaselineHours = Math.max(0, options.minBaselineHours ?? 0);
+    this.sustainMs = Math.max(0, options.sustainMs ?? 0);
+    this.maxSamples = this.historyStore ? STORED_HISTORY_MAX_SAMPLES : 200;
+    this.loadHistory();
+  }
+
+  private get smartMode(): boolean {
+    return this.minBaselineHours > 0 || this.sustainMs > 0;
+  }
+
+  /** nvii-surge-smart-v1: rows are [timestamp, transport, fighter, recon, total] to keep storage small. */
+  private loadHistory(): void {
+    if (!this.historyStore) return;
+    try {
+      const raw = this.historyStore.load();
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { v?: number; theaters?: Record<string, unknown> };
+      if (parsed?.v !== HISTORY_STORE_VERSION || !parsed.theaters || typeof parsed.theaters !== 'object') return;
+      const cutoff = this.now() - MAX_HISTORY_HOURS * 60 * 60 * 1000;
+      for (const [theaterId, rows] of Object.entries(parsed.theaters)) {
+        if (!THEATERS.some(t => t.id === theaterId) || !Array.isArray(rows)) continue;
+        const entries: TheaterActivity[] = [];
+        for (const row of rows) {
+          if (!Array.isArray(row) || row.length < 5 || !row.every(v => typeof v === 'number' && Number.isFinite(v))) continue;
+          const [timestamp, transportCount, fighterCount, reconCount, totalMilitary] = row as [number, number, number, number, number];
+          if (timestamp < cutoff || timestamp > this.now()) continue;
+          entries.push({ theaterId, timestamp, transportCount, fighterCount, reconCount, totalMilitary, flightIds: [] });
+        }
+        entries.sort((a, b) => a.timestamp - b.timestamp);
+        if (entries.length > 0) this.activityHistory.set(theaterId, entries.slice(-this.maxSamples));
+      }
+    } catch {
+      // A broken or foreign store value just means starting fresh.
+    }
+  }
+
+  private saveHistory(): void {
+    if (!this.historyStore) return;
+    try {
+      const theaters: Record<string, number[][]> = {};
+      for (const [theaterId, history] of this.activityHistory) {
+        theaters[theaterId] = history.map(h => [h.timestamp, h.transportCount, h.fighterCount, h.reconCount, h.totalMilitary]);
+      }
+      this.historyStore.save(JSON.stringify({ v: HISTORY_STORE_VERSION, theaters }));
+    } catch {
+      // Storage full or blocked: keep working from memory.
+    }
+  }
+
+  /**
+   * nvii-surge-smart-v1: baseline from earlier samples only (the current one and the surge
+   * window are left out), and only once the samples cover minBaselineHours. null = not learned yet.
+   */
+  private calculateLearnedBaseline(
+    history: TheaterActivity[],
+  ): { transport: number; fighter: number; recon: number; hours: number } | null {
+    const now = this.now();
+    const windowStart = now - BASELINE_WINDOW_HOURS * 60 * 60 * 1000;
+    const windowEnd = now - this.sustainMs;
+    const relevant = history.filter(h => h.timestamp >= windowStart && h.timestamp < windowEnd);
+    if (relevant.length < BASELINE_MIN_SAMPLES) return null;
+    const hours = (relevant[relevant.length - 1]!.timestamp - relevant[0]!.timestamp) / (60 * 60 * 1000);
+    if (hours < this.minBaselineHours) return null;
+    const avg = (pick: (h: TheaterActivity) => number) => relevant.reduce((sum, h) => sum + pick(h), 0) / relevant.length;
+    return {
+      transport: Math.max(2, avg(h => h.transportCount)),
+      fighter: Math.max(1, avg(h => h.fighterCount)),
+      recon: Math.max(1, avg(h => h.reconCount)),
+      hours,
+    };
+  }
+
+  /**
+   * nvii-surge-smart-v1: when the current run of samples at or above `threshold` began, walking back
+   * from the newest sample. A gap longer than SUSTAIN_MAX_GAP_MS ends the run.
+   */
+  private surgeStreakStart(history: TheaterActivity[], pick: (h: TheaterActivity) => number, threshold: number): number | null {
+    let start: number | null = null;
+    for (let i = history.length - 1; i >= 0; i -= 1) {
+      const sample = history[i]!;
+      if (pick(sample) < threshold) break;
+      if (start !== null && start - sample.timestamp > SUSTAIN_MAX_GAP_MS) break;
+      start = sample.timestamp;
+    }
+    return start;
   }
 
   private calculateBaseline(theaterId: string): { transport: number; fighter: number; recon: number } {
@@ -808,14 +926,32 @@ export class MilitarySurgeEngine<TFlight extends MilitaryFlightInput = MilitaryF
 
       const history = this.activityHistory.get(theaterId) || [];
       history.push(activity);
-      if (history.length > 200) history.shift();
+      if (history.length > this.maxSamples) history.shift();
       this.activityHistory.set(theaterId, history);
 
-      const baseline = this.calculateBaseline(theaterId);
+      let baseline: { transport: number; fighter: number; recon: number; hours?: number };
+      if (this.smartMode) {
+        // nvii-surge-smart-v1: nothing real to compare against yet, so no surge for this theater.
+        const learned = this.calculateLearnedBaseline(history);
+        if (!learned) continue;
+        baseline = learned;
+      } else {
+        baseline = this.calculateBaseline(theaterId);
+      }
+
+      // nvii-surge-smart-v1: how long the count has held at surge level (always "long enough" upstream).
+      const held = (pick: (h: TheaterActivity) => number, threshold: number): { ok: boolean; hours?: number } => {
+        if (!this.smartMode) return { ok: true };
+        const start = this.surgeStreakStart(history, pick, threshold);
+        if (start === null) return { ok: false };
+        const heldMs = now - start;
+        return { ok: heldMs >= this.sustainMs, hours: heldMs / (60 * 60 * 1000) };
+      };
 
       if (transportCount >= baseline.transport * SURGE_THRESHOLD && transportCount >= 5) {
         const surgeId = `airlift-${theaterId}`;
         const surgeMultiple = transportCount / baseline.transport;
+        const hold = held(h => h.transportCount, Math.max(5, baseline.transport * SURGE_THRESHOLD));
 
         const existing = this.activeSurges.get(surgeId);
         if (existing) {
@@ -824,7 +960,8 @@ export class MilitarySurgeEngine<TFlight extends MilitaryFlightInput = MilitaryF
           existing.aircraftTypes = aircraftTypes;
           existing.nearbyBases = Array.from(nearbyBasesSet);
           existing.lastUpdated = new Date(now);
-        } else {
+          if (hold.hours !== undefined) existing.sustainedHours = hold.hours;
+        } else if (hold.ok) {
           const alert: SurgeAlert = {
             id: surgeId,
             theater,
@@ -836,6 +973,8 @@ export class MilitarySurgeEngine<TFlight extends MilitaryFlightInput = MilitaryF
             nearbyBases: Array.from(nearbyBasesSet),
             firstDetected: new Date(now),
             lastUpdated: new Date(now),
+            ...(baseline.hours !== undefined ? { baselineHours: baseline.hours } : {}),
+            ...(hold.hours !== undefined ? { sustainedHours: hold.hours } : {}),
           };
           this.activeSurges.set(surgeId, alert);
           newAlerts.push(alert);
@@ -845,8 +984,9 @@ export class MilitarySurgeEngine<TFlight extends MilitaryFlightInput = MilitaryF
       if (fighterCount >= baseline.fighter * SURGE_THRESHOLD && fighterCount >= 4) {
         const surgeId = `fighter-${theaterId}`;
         const surgeMultiple = fighterCount / baseline.fighter;
+        const hold = held(h => h.fighterCount, Math.max(4, baseline.fighter * SURGE_THRESHOLD));
 
-        if (!this.activeSurges.has(surgeId)) {
+        if (!this.activeSurges.has(surgeId) && hold.ok) {
           const alert: SurgeAlert = {
             id: surgeId,
             theater,
@@ -858,6 +998,8 @@ export class MilitarySurgeEngine<TFlight extends MilitaryFlightInput = MilitaryF
             nearbyBases: Array.from(nearbyBasesSet),
             firstDetected: new Date(now),
             lastUpdated: new Date(now),
+            ...(baseline.hours !== undefined ? { baselineHours: baseline.hours } : {}),
+            ...(hold.hours !== undefined ? { sustainedHours: hold.hours } : {}),
           };
           this.activeSurges.set(surgeId, alert);
           newAlerts.push(alert);
@@ -865,6 +1007,7 @@ export class MilitarySurgeEngine<TFlight extends MilitaryFlightInput = MilitaryF
       }
     }
 
+    this.saveHistory();
     return newAlerts;
   }
 

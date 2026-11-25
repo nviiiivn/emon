@@ -222,7 +222,7 @@ function decideTabCap(
 export function resolveTabCap(input: ExportGateInputs, currentTabCount: number): TabCapVerdict {
   if (input.desktopKeyPresent) return UNCAPPED;
   if (input.authPending) return UNCAPPED;
-  if (!input.signedIn) return decideTabCap(input, currentTabCount, FREE_TAB_CAP, 'anonymous');
+  if (!input.signedIn) return UNCAPPED; // nvii-mine-2: EMON has no accounts, so tabs are never capped (was 3)
 
   const features = input.features;
   if (features === null) return UNCAPPED;

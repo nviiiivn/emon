@@ -55,9 +55,7 @@ export class MobilePanelNav {
       { key: 'all', label: t('header.sourceRegionAll') },
       // PRO right after All: one tap surfaces the whole premium suite —
       // each panel renders its own unlock CTA (the mobile conversion path).
-      ...(this.proPanelKeys.size > 0
-        ? [{ key: PRO_CATEGORY, label: `⚡ ${t('widgets.proBadge')}` }]
-        : []),
+      // nvii-mine-2: no "⚡ PRO" chip (nothing is locked on EMON)
       ...getVariantPanelCategories(settings, SITE_VARIANT)
         .map(({ key, labelKey }) => ({ key, label: t(labelKey) })),
     ];

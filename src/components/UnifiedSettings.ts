@@ -97,7 +97,7 @@ import {
   type ApiPlanLimitNotice,
 } from '@/services/api-plan-limit-notices';
 import { isImeEnter, setTrustedHtml, trustedHtml } from '@/utils/dom-utils';
-import { checkoutConsentHtml, legalLinksHtml, LEGAL_LINK_ATTR } from '@/utils/legal-links';
+import { checkoutConsentHtml, LEGAL_LINK_ATTR } from '@/utils/legal-links';
 import { dashboardSiteLinksHtml } from '@/utils/dashboard-site-links';
 import { resolveDashboardSiteOrigin } from '@/config/dashboard-reference-links';
 import { createFocusTrap, type FocusTrap } from '@/utils/focus-trap';
@@ -1586,7 +1586,6 @@ export class UnifiedSettings {
             isDesktopApp: this.config.isDesktopApp,
             hostname: window.location.hostname,
           }))}
-          ${legalLinksHtml(WEB_APP_ORIGIN)}
         </div>
       `, 'about page; link helpers escape every href'));
       return { dispose: () => {} };
@@ -2008,7 +2007,6 @@ export class UnifiedSettings {
         <div class="panel-settings-item${supportsPanelFontScale ? ' has-font-scale' : ''}">
           <button type="button" class="panel-toggle-item ${on ? 'active' : ''}${changed ? ' changed' : ''}${locked ? ' pro-locked' : ''}" data-panel="${escapeHtml(key)}" ${a11yState.ariaPressed === null ? '' : `aria-pressed="${a11yState.ariaPressed}"`} ${a11yState.ariaLabel === null ? '' : `aria-label="${escapeHtml(a11yState.ariaLabel)}"`} ${locked ? 'data-pro-locked="1"' : ''}>
             <span class="panel-toggle-label">${escapeHtml(displayName)}</span>
-            ${(locked || resolvedPanel.premium) ? '<span class="panel-toggle-pro-badge" aria-hidden="true">PRO</span>' : ''}
             <span class="panel-toggle-switch" aria-hidden="true"></span>
           </button>
           ${supportsPanelFontScale ? `<label class="panel-font-scale-control">

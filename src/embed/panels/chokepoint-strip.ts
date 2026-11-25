@@ -114,7 +114,7 @@ export async function mountEmbedChokepointStrip(root: HTMLElement, apiKey: strin
   attribution.href = buildWorldMonitorAttributionUrl(new URL('/dashboard', window.location.origin).toString(), getReferrerHost());
   attribution.target = '_blank';
   attribution.rel = 'noopener noreferrer';
-  attribution.textContent = 'Chokepoint Monitor by World Monitor';
+  attribution.textContent = 'Chokepoint Monitor by EMON Earth Monitor';
   wrap.appendChild(attribution);
 
   root.appendChild(wrap);

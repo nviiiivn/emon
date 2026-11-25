@@ -1,6 +1,6 @@
-# EMON
+# EMON Earth Monitor
 
-EMON is a self-hosted, modified copy of [World Monitor](https://github.com/koala73/worldmonitor) (AGPL-3.0),
+EMON Earth Monitor (EMON) is a self-hosted, modified copy of [World Monitor](https://github.com/koala73/worldmonitor) (AGPL-3.0),
 focused on North America: planes, ships, weather, floods, fires, cameras and news on one map.
 This branch holds the changes; `main` is upstream, untouched. Same license as upstream: AGPL-3.0.
 

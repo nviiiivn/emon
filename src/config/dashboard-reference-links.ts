@@ -6,13 +6,8 @@
  * full link row; Settings and the mobile More menu do. Keep this list as the
  * single source for both surfaces so desktop and mobile stay in parity.
  */
-export const DASHBOARD_REFERENCE_LINKS = [
-  { label: 'Countries', path: '/countries/' },
-  { label: 'Chokepoints', path: '/chokepoints/' },
-  { label: 'Crises', path: '/crises/' },
-  { label: 'Tools', path: '/tools/' },
-  { label: 'Accuracy', path: '/accuracy/' },
-] as const;
+// nvii-mine-1: World Monitor's site pages (Countries, Chokepoints, Crises, Tools, Accuracy) do not exist on EMON.
+export const DASHBOARD_REFERENCE_LINKS: ReadonlyArray<{ label: string; path: string }> = [];
 
 /** Absolute origin used when the dashboard runs on a production hostname. */
 export const DASHBOARD_SITE_ORIGIN = 'https://www.worldmonitor.app';
@@ -30,10 +25,8 @@ export function resolveDashboardSiteOrigin(options: {
     : '';
 }
 
-export const DASHBOARD_EXTERNAL_SITE_LINKS = [
-  { label: 'Blog', href: 'https://www.worldmonitor.app/blog/' },
-  { label: 'Docs', href: 'https://www.worldmonitor.app/docs/documentation' },
-  { label: 'Status', href: 'https://status.worldmonitor.app/' },
-  { label: 'GitHub', href: 'https://github.com/koala73/worldmonitor' },
-  { label: 'X', href: 'https://x.com/worldmonitorai' },
-] as const;
+// nvii-mine-1: only EMON's own source code (AGPL-3.0 asks for a source link); upstream Blog/Docs/Status/GitHub/X removed.
+export const DASHBOARD_EXTERNAL_SITE_LINKS: ReadonlyArray<{ label: string; href: string }> = [
+  { label: 'Source code', href: 'https://github.com/nviiiivn/emon' },
+  { label: 'Built on koala73/worldmonitor (AGPL-3.0)', href: 'https://github.com/koala73/worldmonitor' },
+];

@@ -414,3 +414,75 @@ describe('posture recalculation with vessels and CII', () => {
     assert.equal(taiwan.postureLevel, 'critical');
   });
 });
+
+// nvii-surge-smart-v1 (EMON): learned baseline, sustained surges, history that survives a reload.
+describe('smart surge mode (learned baseline, must hold, stored history)', () => {
+  const TEN_MIN = 10 * 60 * 1000;
+  const smart = (extra = {}) => makeEngine({ minBaselineHours: 6, sustainMs: 2 * HOUR_MS, ...extra });
+  const memoryStore = () => {
+    let value = null;
+    return { load: () => value, save: (s) => { value = s; }, peek: () => value };
+  };
+  const tick = (engine, clock, count) => {
+    const alerts = engine.analyzeFlightsForSurge(flightsAt(count, AL_UDEID, { aircraftType: 'transport' }));
+    clock.now += TEN_MIN;
+    return alerts;
+  };
+
+  it('raises nothing on a cold start, however many transports', () => {
+    const { engine } = smart();
+    assert.deepEqual(engine.analyzeFlightsForSurge(flightsAt(12, AL_UDEID, { aircraftType: 'transport' })), []);
+  });
+
+  it('raises nothing while the baseline covers less than 6 hours', () => {
+    const { engine, clock } = smart({ sustainMs: 0 });
+    for (let i = 0; i < 30; i += 1) tick(engine, clock, 3); // 5 h of quiet
+    assert.deepEqual(tick(engine, clock, 12), []);
+  });
+
+  it('alerts only after the jump has held 2 hours, against the learned baseline', () => {
+    const { engine, clock } = smart();
+    for (let i = 0; i < 48; i += 1) assert.deepEqual(tick(engine, clock, 3), []); // 8 h of quiet
+    for (let i = 0; i < 12; i += 1) assert.deepEqual(tick(engine, clock, 8), []); // 0..1h50 at surge level
+    const alerts = tick(engine, clock, 8); // 2h00
+    assert.equal(alerts.length, 1);
+    assert.equal(alerts[0].baselineCount, 3);
+    assert.ok(alerts[0].baselineHours >= 6);
+    assert.equal(alerts[0].sustainedHours, 2);
+    const signal = surgeAlertToSignal(alerts[0]);
+    assert.match(signal.description, /^8 airlift aircraft detected \(2\.7x the usual 3, learned from \d+ h of tracking; held 2\.0 h\)\./);
+  });
+
+  it('does not join a surge across a gap (page closed)', () => {
+    const { engine, clock } = smart();
+    for (let i = 0; i < 48; i += 1) tick(engine, clock, 3);
+    for (let i = 0; i < 7; i += 1) tick(engine, clock, 8); // 1 h at surge level
+    clock.now += 40 * 60 * 1000; // closed for 40 min
+    for (let i = 0; i < 10; i += 1) assert.deepEqual(tick(engine, clock, 8), []); // 1h30 since the gap
+  });
+
+  it('a dip below surge level resets the clock', () => {
+    const { engine, clock } = smart();
+    for (let i = 0; i < 48; i += 1) tick(engine, clock, 3);
+    for (let i = 0; i < 10; i += 1) tick(engine, clock, 8);
+    tick(engine, clock, 3);
+    for (let i = 0; i < 12; i += 1) assert.deepEqual(tick(engine, clock, 8), []);
+    assert.equal(tick(engine, clock, 8).length, 1);
+  });
+
+  it('keeps history across a reload through the store', () => {
+    const store = memoryStore();
+    const { engine, clock } = smart({ historyStore: store });
+    for (let i = 0; i < 48; i += 1) tick(engine, clock, 3);
+    assert.ok(store.peek());
+    const reloaded = new MilitarySurgeEngine({ now: () => clock.now, minBaselineHours: 6, sustainMs: 2 * HOUR_MS, historyStore: store });
+    assert.equal(reloaded.getTheaterActivity('middle-east').length, 48);
+    assert.deepEqual(reloaded.getTheaterActivity('middle-east')[0].flightIds, []);
+  });
+
+  it('ignores a broken stored value', () => {
+    const store = { load: () => '{not json', save: () => {} };
+    const { engine } = smart({ historyStore: store });
+    assert.deepEqual(engine.getTheaterActivity('middle-east'), []);
+  });
+});

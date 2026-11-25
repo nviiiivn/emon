@@ -684,7 +684,7 @@ export class App {
   }
 
   private shouldRefreshFirms(): boolean {
-    return this.isPanelNearViewport('satellite-fires');
+    return this.isPanelNearViewport('satellite-fires') || this.state.mapLayers.fires; // nvii-fires-boot
   }
 
   private shouldRefreshCorrelation(): boolean {
@@ -3136,7 +3136,7 @@ export class App {
     await this.panelLayout.init();
     markLcpDebug('wm:layout:init-complete');
     this.eventHandlers.setupSearchControls();
-    showProBanner(this.state.container);
+    void showProBanner; // nvii-mine-2: no Pro banner on EMON
     this.updateConnectivityUi();
     window.addEventListener('online', this.handleConnectivityChange);
     window.addEventListener('offline', this.handleConnectivityChange);

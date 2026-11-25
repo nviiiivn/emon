@@ -259,7 +259,19 @@ http {
       try_files $uri $uri/ $uri/index.html /dashboard.html;
       # nvii self-host: link the hide-Pro stylesheet into every HTML page
       sub_filter '</head>' '<link rel="stylesheet" href="/selfhost-hide-pro.css"><script nonce="wm-static-bootstrap" src="/selfhost-channels.js"></script></head>';
-      sub_filter_once on;
+      # nvii-brand (2026-11-20, her ask): this copy is named EMON Earth Monitor. Only whole <title>/<meta> tags are
+      # swapped (never text inside inline scripts, whose hashes the CSP pins).
+      sub_filter '<title>Live World Map: Conflicts, Flights and Ships | World Monitor</title>' '<title>EMON Earth Monitor</title>';
+      sub_filter '<meta name="application-name" content="World Monitor" />' '<meta name="application-name" content="EMON Earth Monitor" />';
+      sub_filter '<meta property="og:title" content="Live World Map: Conflicts, Flights and Ships | World Monitor" />' '<meta property="og:title" content="EMON Earth Monitor" />';
+      sub_filter '<meta name="twitter:title" content="Live World Map: Conflicts, Flights and Ships | World Monitor" />' '<meta name="twitter:title" content="EMON Earth Monitor" />';
+      sub_filter '<meta property="og:site_name" content="World Monitor" />' '<meta property="og:site_name" content="EMON Earth Monitor" />';
+      sub_filter '<meta property="og:url" content="https://www.worldmonitor.app/dashboard" />' '<meta property="og:url" content="https://emon.alola.lol/" />';
+      sub_filter '<meta name="twitter:url" content="https://www.worldmonitor.app/dashboard" />' '<meta name="twitter:url" content="https://emon.alola.lol/" />';
+      sub_filter '<meta name="description" content="Real-time global intelligence: conflicts, markets, military, OSINT signals — live in 190+ countries; structural resilience ranked for 169 of 196 countries." />' '<meta name="description" content="EMON Earth Monitor: planes, ships, weather, floods, fires, cameras and news on one live map, North America first." />';
+      sub_filter '<meta property="og:description" content="Real-time global intelligence: conflicts, markets, military, OSINT signals — live in 190+ countries; structural resilience ranked for 169 of 196 countries." />' '<meta property="og:description" content="EMON Earth Monitor: planes, ships, weather, floods, fires, cameras and news on one live map, North America first." />';
+      sub_filter '<meta name="twitter:description" content="Real-time global intelligence: conflicts, markets, military, OSINT signals — live in 190+ countries; structural resilience ranked for 169 of 196 countries." />' '<meta name="twitter:description" content="EMON Earth Monitor: planes, ships, weather, floods, fires, cameras and news on one live map, North America first." />';
+      sub_filter_once off;
       # Branded page for nginx-generated 5xx on document routes, keeping the
       # status code. Scoped to this location, not the server: a server-level
       # error_page is inherited by /api/, where it would replace JSON errors

@@ -58,7 +58,7 @@ import type {
 // ---------------------------------------------------------------------------
 
 /** Mirror of the server-side `convex/constants.ts::FREE_TIER_FOLLOW_LIMIT`. */
-export const FREE_TIER_FOLLOW_LIMIT = 3;
+export const FREE_TIER_FOLLOW_LIMIT = 1000; // nvii-mine-2: no free-plan limit on EMON (was 3)
 
 /** localStorage key for the anonymous-mode list. Versioned for safe migration. */
 export const FOLLOWED_COUNTRIES_STORAGE_KEY = 'wm-followed-countries-v1';
