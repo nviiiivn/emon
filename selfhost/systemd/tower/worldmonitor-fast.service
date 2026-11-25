@@ -1,0 +1,5 @@
+[Unit]
+Description=EMON short-lived data (Cross-Source Signals)
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/wm-seed-fast.sh

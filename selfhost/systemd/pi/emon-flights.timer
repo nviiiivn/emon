@@ -1,0 +1,9 @@
+[Unit]
+Description=Refresh EMON flight boards every 2 hours (OpenSky anonymous quota)
+
+[Timer]
+OnCalendar=*-*-* 00/2:20:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,6 @@
+[Unit]
+Description=EMON feed: local headlines per city, her ask 2026-11-19
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -I %h/services/emon-feeds/news_local.py
+TimeoutStartSec=5min

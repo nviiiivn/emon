@@ -1,0 +1,32 @@
+# EMON behind Caddy (https://caddyserver.com). This is the shape EMON's own front server uses, with the hostnames
+# changed. Caddy gets the TLS certificate by itself; put the hostname in DNS first.
+#
+# The hostname must start with "emon." (for example emon.example.com): the add-ons in selfhost/selfhost-channels.js
+# only run on hosts that start with "emon.".
+#
+#   /local/*     static files written by the feed scripts in selfhost/extras/pi-feeds (flights.json,
+#                fire-perimeters.json, cams.json, news-local.json, hidden.json, fonts/). Optional.
+#   /camproxy/*  selfhost/extras/pi-feeds/camproxy.py (plane/ship lookups, aircraft emergencies, camera snapshots,
+#                satellite pictures). Optional.
+#   everything else -> the worldmonitor container (WM_PORT in .env; 8960 below).
+
+emon.example.com {
+	header X-Robots-Tag "noindex, nofollow"
+
+	handle_path /local/* {
+		root * /srv/emon-local
+		header Cache-Control "no-cache"
+		file_server
+	}
+
+	handle /camproxy/* {
+		reverse_proxy 127.0.0.1:8931
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:8960 {
+			# the container's nginx listens on 8080 inside; fix its absolute redirects
+			header_down Location "^https?://emon\.example\.com:8080" "https://emon.example.com"
+		}
+	}
+}

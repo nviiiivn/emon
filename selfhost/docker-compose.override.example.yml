@@ -1,3 +1,6 @@
+# EMON: copy this file to docker-compose.override.yml in the repo root (see README.md, step 3). It is the override
+# EMON's own server runs; values come from .env (${...}), none are written here.
+
 # nvii self-host changes (2026-11-19): hide the paid Pro upsell; add her YouTube news channels to Live News.
 # selfhost/nginx.conf.template = the image's /etc/nginx/nginx.conf.template (copy: selfhost/nginx.conf.template.from-image) + 3 sub_filter lines in "location /".
 # If an upstream update changes docker/nginx.conf.template, docker cp it out again and re-add those lines.
@@ -13,6 +16,7 @@ services:
       OLLAMA_MODEL: "${OLLAMA_MODEL:-gemma4:12b}"
       # .env LLM_API_URL points at 127.0.0.1 for the host seeders; inside the container only the Ollama provider is used
       LLM_API_URL: ""
+      WORLDMONITOR_SEED_REFRESH_KEY: "${WORLDMONITOR_SEED_REFRESH_KEY:-}"
     volumes:
       - ./selfhost/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
       # web files built from this checkout with selfhost/patch_cams.py applied (SF, Oakland, Seattle webcams);
@@ -20,8 +24,23 @@ services:
       - ./selfhost/dist:/usr/share/nginx/html:ro
       - ./selfhost/hide-pro.css:/usr/share/nginx/html/selfhost-hide-pro.css:ro
       - ./selfhost/selfhost-channels.js:/usr/share/nginx/html/selfhost-channels.js:ro
-  # nvii-local-ai (2026-11-20): the relay classifies headlines with the same local model
+  # nvii-local-ai (2026-11-20): relay headline classification is OFF on purpose. With a model configured the relay
+  # re-requests the news digest ~6 times a minute, which pinned the app's single node process and made other
+  # routes fail with 503 "Rate-limit service temporarily unavailable". To try again, restore:
+  #   ais-relay: environment: OLLAMA_API_URL: "http://wm-llm:11434", OLLAMA_MODEL: "${OLLAMA_MODEL:-gemma4:12b}"
+  # nvii-ais-static (2026-11-20): the relay runs the image's own ais-relay.cjs plus one small addition that keeps what
+  # ships broadcast about themselves (callsign, destination, ETA, size) and writes selfhost/nvii-data/ais-static.json.
+  # selfhost/relay/ais-relay.from-image.cjs is the untouched copy. After an image update: docker cp the new file out and
+  # re-apply the nvii-ais-static block, or delete these lines to go back to the stock relay.
   ais-relay:
-    environment:
-      OLLAMA_API_URL: "http://wm-llm:11434"
-      OLLAMA_MODEL: "${OLLAMA_MODEL:-gemma4:12b}"
+    volumes:
+      - ./selfhost/relay/ais-relay.cjs:/app/scripts/ais-relay.cjs:ro
+      - ./selfhost/nvii-data:/nvii-data
+  # nvii-ratelimit-eval (2026-11-20): the Redis REST helper runs the image's own redis-rest-proxy.mjs plus one small
+  # addition that also accepts the rate limiter's standard scripts (selfhost/redis-rest/nvii-eval-allow.json). Without
+  # it every strictly rate-limited route answers 503 "Rate-limit service temporarily unavailable".
+  # selfhost/redis-rest/redis-rest-proxy.from-image.mjs is the untouched copy. Delete these lines to go back to stock.
+  redis-rest:
+    volumes:
+      - ./selfhost/redis-rest/redis-rest-proxy.mjs:/app/redis-rest-proxy.mjs:ro
+      - ./selfhost/redis-rest/nvii-eval-allow.json:/app/nvii-eval-allow.json:ro

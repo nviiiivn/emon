@@ -1,0 +1,10 @@
+[Unit]
+Description=World Monitor: refresh data every 30 minutes (her ask 2026-11-19)
+
+[Timer]
+OnActiveSec=40min
+OnUnitInactiveSec=30min
+Persistent=false
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=EMON camera proxy (Texas DOT snapshots as JPEG), her ask 2026-11-19
+[Service]
+# Optional settings (names only; values never in the repo): CDSE_CLIENT_ID, CDSE_CLIENT_SECRET (Copernicus Data Space,
+# Sentinel-2 close-ups), EMON_AIS_STATIC_SSH, EMON_AIS_STATIC_PATH (ship details). EMON keeps them in this file:
+# EnvironmentFile=-%h/services/emon-feeds/.env.cdse
+ExecStart=/usr/bin/python3 -I %h/services/emon-feeds/camproxy.py
+Restart=on-failure
+RestartSec=10
+[Install]
+WantedBy=default.target

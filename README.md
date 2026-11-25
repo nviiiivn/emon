@@ -1,255 +1,332 @@
-# World Monitor
+# EMON Earth Monitor
 
-[简体中文](README.zh-CN.md) | [日本語](README.ja-JP.md) | [Русский](README.ru.md)
+A live map of what is happening, **North America first**: planes and ships, severe weather and floods, wildfires,
+earthquakes, traffic cameras, local and world news, markets and conflict, on one screen. Live at
+**https://emon.alola.lol**.
 
-**Real-time global intelligence dashboard** — AI-powered news aggregation, geopolitical monitoring, and infrastructure tracking in a unified situational awareness interface.
+EMON is a self-hosted, modified copy of [**World Monitor** by koala73](https://github.com/koala73/worldmonitor),
+licensed **AGPL-3.0** like the original. This repository is EMON's complete source. World Monitor's own README is kept at
+[docs/README.worldmonitor.md](docs/README.worldmonitor.md), and its self-hosting guide at [SELF_HOSTING.md](SELF_HOSTING.md).
 
-The World Monitor name and wordmark identify the official site at [www.worldmonitor.app](https://www.worldmonitor.app), so please don't present a fork as the official site.
-
-[![GitHub stars](https://img.shields.io/github/stars/koala73/worldmonitor?style=social)](https://github.com/koala73/worldmonitor/stargazers)
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Last commit](https://img.shields.io/github/last-commit/koala73/worldmonitor)](https://github.com/koala73/worldmonitor/commits/main)
-[![Latest release](https://img.shields.io/github/v/release/koala73/worldmonitor?style=flat)](https://github.com/koala73/worldmonitor/releases/latest)
-[![npm: worldmonitor](https://img.shields.io/npm/v/worldmonitor?logo=npm&label=npm)](https://www.npmjs.com/package/worldmonitor)
-[![skills.sh](https://skills.sh/b/koala73/worldmonitor)](https://skills.sh/koala73/worldmonitor)
-
-<p align="center">
-  <a href="https://www.worldmonitor.app"><img src="https://img.shields.io/badge/Web_App-worldmonitor.app-blue?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Web App"></a>&nbsp;
-  <a href="https://tech.worldmonitor.app"><img src="https://img.shields.io/badge/Tech_Variant-tech.worldmonitor.app-0891b2?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Tech Variant"></a>&nbsp;
-  <a href="https://finance.worldmonitor.app"><img src="https://img.shields.io/badge/Finance_Variant-finance.worldmonitor.app-059669?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Finance Variant"></a>&nbsp;
-  <a href="https://commodity.worldmonitor.app"><img src="https://img.shields.io/badge/Commodity_Variant-commodity.worldmonitor.app-b45309?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Commodity Variant"></a>&nbsp;
-  <a href="https://happy.worldmonitor.app"><img src="https://img.shields.io/badge/Happy_Variant-happy.worldmonitor.app-f59e0b?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Happy Variant"></a>&nbsp;
-  <a href="https://energy.worldmonitor.app"><img src="https://img.shields.io/badge/Energy_Variant-energy.worldmonitor.app-eab308?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Energy Variant"></a>
+<p>
+  <img src="docs/screenshots/emon-map-bay-area.png" alt="EMON's map over the San Francisco Bay Area: live planes, ships, alerts and the layer list" width="640">
+  <img src="docs/screenshots/emon-phone.png" alt="EMON on a phone" width="200">
 </p>
 
-<p align="center">
-  <a href="https://www.npmjs.com/package/worldmonitor"><img src="https://img.shields.io/npm/v/worldmonitor?style=for-the-badge&logo=npm&logoColor=white&label=npm%20i%20worldmonitor&color=CB3837" alt="npm i worldmonitor"></a>&nbsp;
-  <a href="https://www.worldmonitor.app/docs/cli-dashboard"><img src="https://img.shields.io/badge/Terminal_Dashboard-npx%20worldmonitor-CB3837?style=for-the-badge&logo=gnometerminal&logoColor=white" alt="Terminal dashboard: npx worldmonitor"></a>&nbsp;
-  <a href="https://pypi.org/project/worldmonitor-sdk/"><img src="https://img.shields.io/pypi/v/worldmonitor-sdk?style=for-the-badge&logo=pypi&logoColor=white&label=pip%20install%20worldmonitor-sdk&color=3775A9" alt="pip install worldmonitor-sdk"></a>&nbsp;
-  <a href="https://rubygems.org/gems/worldmonitor"><img src="https://img.shields.io/gem/v/worldmonitor?style=for-the-badge&logo=rubygems&logoColor=white&label=gem%20install%20worldmonitor&color=E9573F" alt="gem install worldmonitor"></a>&nbsp;
-  <a href="https://pkg.go.dev/github.com/koala73/worldmonitor/sdk/go"><img src="https://img.shields.io/badge/go%20get-sdk%2Fgo-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="go get github.com/koala73/worldmonitor/sdk/go"></a>
-</p>
+## What is different from World Monitor
 
-<p align="center">
-  <a href="https://www.worldmonitor.app/api/download?platform=windows-exe"><img src="https://img.shields.io/badge/Download-Windows_(.exe)-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Windows"></a>&nbsp;
-  <a href="https://www.worldmonitor.app/api/download?platform=macos-arm64"><img src="https://img.shields.io/badge/Download-macOS_Apple_Silicon-000000?style=for-the-badge&logo=apple&logoColor=white" alt="Download macOS ARM"></a>&nbsp;
-  <a href="https://www.worldmonitor.app/api/download?platform=macos-x64"><img src="https://img.shields.io/badge/Download-macOS_Intel-555555?style=for-the-badge&logo=apple&logoColor=white" alt="Download macOS Intel"></a>&nbsp;
-  <a href="https://www.worldmonitor.app/api/download?platform=linux-appimage"><img src="https://img.shields.io/badge/Download-Linux_(.AppImage)-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Download Linux"></a>
-</p>
+- **No accounts, no paid tier.** Sign In, Pro, Upgrade, pricing and the PRO badges are deleted in the code, and every
+  feature is open to every visitor (`selfhost/unlock_pro.py`, `unlock_export.py`, `patch_mine.py`, `patch_mine2.py`,
+  `patch_mine3.py`).
+- **AI on your own machine.** Summaries, briefs and classifications run on a local [Ollama](https://ollama.com) model
+  instead of a paid API (`selfhost/extras/local-ai/`).
+- **North America first.** It opens on North America, with severe-weather alerts for the US and Canada, more cameras and
+  news channels for SF, Oakland, Seattle, LA and Santa Cruz, and airport boards for the cities' main airports.
+- **More on the map:** live planes and ships around the area you are looking at, aircraft declaring emergencies,
+  current wildfire outlines, about 40,000 public traffic cameras, "On the scene" posts from the place on the map, a
+  Pulse panel listing every flashing news location, and clickable conflict, fire and strike points with satellite
+  pictures (`selfhost/patch_*.py`, `selfhost/selfhost-channels.js`).
+- **Editions as paths** on one site, instead of one subdomain each.
 
-<p align="center">
-  <a href="https://www.worldmonitor.app/docs/documentation"><strong>Documentation</strong></a> &nbsp;·&nbsp;
-  <a href="https://github.com/koala73/worldmonitor/releases/latest"><strong>Releases</strong></a> &nbsp;·&nbsp;
-  <a href="https://www.worldmonitor.app/docs/contributing"><strong>Contributing</strong></a>
-</p>
+### Editions
 
-![World Monitor Dashboard](docs/images/worldmonitor-7-mar-2026.jpg)
+| Path | Edition |
+| --- | --- |
+| `/` | World |
+| `/war` | War |
+| `/weather` | Weather |
+| `/tech` | Tech |
+| `/finance` | Finance |
+| `/commodity` | Commodity |
+| `/energy` | Energy |
 
-## Ways to Use It
+Each edition has its own tabs (missions) and its own map. `/good-news` (World Monitor's "Happy" edition) still loads if typed.
 
-| Surface | Get it | Docs |
-|---------|--------|------|
-| **Web app** | [worldmonitor.app](https://www.worldmonitor.app) and the tech, finance, commodity, happy and energy variants | [Getting Started](https://www.worldmonitor.app/docs/getting-started) |
-| **Desktop app** (Tauri) | Windows, macOS and Linux downloads above | [Desktop App](https://www.worldmonitor.app/docs/desktop-app) |
-| **Terminal dashboard** | `npx worldmonitor` | [Terminal Dashboard](https://www.worldmonitor.app/docs/cli-dashboard) |
-| **CLI** | `npm install -g worldmonitor` or `brew install worldmonitor` | [Command-Line Client](https://www.worldmonitor.app/docs/cli) |
-| **SDKs** | Python `worldmonitor-sdk`, Ruby `worldmonitor`, Go `sdk/go` | [SDKs](https://www.worldmonitor.app/docs/sdks) |
-| **MCP server** | `https://worldmonitor.app/mcp` | [MCP Overview](https://www.worldmonitor.app/docs/mcp-overview) |
+## How it runs
 
-The terminal dashboard runs the same live data in your shell: world map, news, markets, conflict, military flights, cyber, climate, prediction markets and live TV, with mouse support and colour themes. No API key needed.
+```
+browser
+  └─ reverse proxy (Caddy) on emon.<your-domain>
+       ├─ /local/*      static JSON written by the feed scripts      (optional, selfhost/extras/pi-feeds)
+       ├─ /camproxy/*   camproxy.py on 127.0.0.1:8931                 (optional, selfhost/extras/pi-feeds)
+       └─ everything else → worldmonitor container (WM_PORT, 8960 on EMON's server)
 
-![World Monitor terminal dashboard](docs/images/tui/overview.webp)
+docker compose (docker-compose.yml + docker-compose.override.yml)
+  worldmonitor   World Monitor's published image: nginx + API. EMON mounts its own web build (selfhost/dist),
+                 nginx template and selfhost-channels.js into it.
+  ais-relay      ship (AIS), Telegram/X and news relay. EMON mounts selfhost/relay/ais-relay.cjs.
+  redis          the data store.
+  redis-rest     REST front for Redis. EMON mounts selfhost/redis-rest/redis-rest-proxy.mjs.
+  wm-llm         optional: a tiny bridge from the app to Ollama on the host (selfhost/extras/local-ai).
 
----
-
-## What It Does
-
-- **Curated news feeds** across global and regional categories, AI-synthesized into briefs
-- **Dual map engine** — 3D globe (globe.gl) and WebGL flat map (deck.gl) with a shared map-layer catalog
-- **Panel inventory** — concrete panel implementations across specialized variants
-- **Cross-stream correlation** — military, economic, disaster, and escalation signal convergence
-- **[Country Instability Index (CII)](https://www.worldmonitor.app/country-instability-index/)** — live CII v14 scores, bands, and approximate 24-hour movement for 31 Tier-1 countries
-- **Finance radar** — stock exchanges, commodities, crypto, and a market composite
-- **Local AI** — run everything with Ollama, no API keys required
-- **Site variants** from a single codebase (world, tech, finance, commodity, happy, energy)
-- **Native desktop app** (Tauri 2) for macOS, Windows, and Linux
-- **Multilingual UI** with native-language feeds and RTL support
-
-For the full feature list, architecture, data sources, and algorithms, see the **[documentation](https://www.worldmonitor.app/docs/documentation)**.
-
----
-
-## Support Status
-
-All site variants and desktop binaries are built from a single codebase and ship from the same release process. The table below clarifies maintenance status so you know which surfaces are safe to depend on.
-
-| Surface | Status | Notes |
-|---------|--------|-------|
-| `worldmonitor.app`, `tech.`, `finance.`, `commodity.`, `happy.`, `energy.` | Stable | Public deployments built from this repo, actively maintained |
-| Desktop binaries (Windows / macOS Apple Silicon / macOS Intel / Linux AppImage x64 and ARM64) | Stable | One Tauri binary for every variant — install World Monitor and switch to tech, finance, commodity, energy, or happy in-app. There is deliberately no per-variant download |
-| `worldmonitor` npm package (terminal dashboard and CLI) | Stable | Published from [`cli/`](cli/) on every `cli-v*` tag |
-
-Issues filed against any of the above are triaged from the same backlog — see the [issues board](https://github.com/koala73/worldmonitor/issues) for currently-open work.
-
----
-
-## Quick Start
-
-**One-line install** (self-host the full stack with Docker — dashboard, Redis, AIS relay, seeded public data):
-
-```bash
-curl -fsSL https://www.worldmonitor.app/install.sh | bash
+host
+  seeders        Node scripts that fetch the public data into Redis, on systemd timers (selfhost/systemd/tower).
+  Ollama         optional, for the AI features.
 ```
 
-This clones into `./worldmonitor` (or reuses your checkout), generates the required secrets, starts the stack, and seeds data. Then open [localhost:3000](http://localhost:3000). Options: `--dir`, `--port`, `--no-seed`, `--no-build`, passed after `bash -s --` (see `scripts/install.sh --help`). API keys are optional. Details, production notes, and uninstall: [SELF_HOSTING.md](./SELF_HOSTING.md).
+The API server is World Monitor's published image, unchanged. EMON's changes are in the web app it serves (built
+from this repo into `selfhost/dist`), the nginx template, the relay and REST-proxy files, and the add-ons in
+`selfhost/selfhost-channels.js`. EMON's own server runs everything except the feed scripts on one Linux box. The feed
+scripts and the Caddy front run on a second small one (a Raspberry Pi), but one machine is enough.
 
-**Local development** (hot-reload Vite server):
+## Self-hosting
 
-Requires Node.js 24, the version pinned in `.nvmrc`. Distribution packages are often older. Debian 12 and Raspberry Pi OS ship Node.js 18 with npm 9.2.0, where `npm install` stops with `Invalid comparator: file:vendor/braces`. Install Node.js 24 with [nvm](https://github.com/nvm-sh/nvm) (`nvm install` inside the checkout reads `.nvmrc`) or from [nodejs.org](https://nodejs.org/en/download).
+### Requirements
 
-```bash
-git clone https://github.com/koala73/worldmonitor.git
-cd worldmonitor
-npm install
-npm run dev
-```
+- Linux with **Docker** and **Docker Compose v2**.
+- **Node.js 22.19 or newer** and npm on the host (the repo's `.nvmrc` says 24; EMON's server runs 26). This is for the build
+  and the seeders.
+- git, rsync and python3.
+- A domain name, and a reverse proxy such as Caddy, if it should be reachable from outside.
+- Optional: [Ollama](https://ollama.com) and a GPU for the AI features.
 
-Open [localhost:3000](http://localhost:3000) (override the port with `DEV_PORT` in `.env.local`). The app runs with no environment variables.
-
-Feature-specific data sources may require credentials. See `.env.example` for the full list.
-
-For variant-specific development:
-
-```bash
-npm run dev:tech       # tech.worldmonitor.app
-npm run dev:finance    # finance.worldmonitor.app
-npm run dev:commodity  # commodity.worldmonitor.app
-npm run dev:happy      # happy.worldmonitor.app
-npm run dev:energy     # energy.worldmonitor.app
-```
-
-See the **[self-hosting guide](https://www.worldmonitor.app/docs/getting-started)** for deployment options (Vercel, Docker, static).
-
----
-
-## Tech Stack
-
-| Category | Technologies |
-|----------|-------------|
-| **Frontend** | Vanilla TypeScript, Vite, globe.gl + Three.js, deck.gl + MapLibre GL |
-| **Desktop** | Tauri 2 (Rust) with Node.js sidecar |
-| **AI/ML** | Ollama / OpenRouter, Transformers.js (browser-side) |
-| **API Contracts** | Protocol Buffers and sebuf HTTP annotations |
-| **Deployment** | Vercel Edge Functions, Railway relay, Tauri, PWA |
-| **Caching** | Redis (Upstash), 3-tier cache, CDN, service worker |
-
-Full stack details in the **[architecture docs](https://www.worldmonitor.app/docs/architecture)**.
-
----
-
-## Programmatic Access
-
-World Monitor is built for agents and scripts as well as browsers:
-
-- **MCP server** — `https://worldmonitor.app/mcp` (Streamable HTTP). Public `tools/list`; `tools/call` authenticates with a `X-WorldMonitor-Key` header or OAuth.
-  The server also publishes its Agent Skills through the draft `io.modelcontextprotocol/skills` extension (`skills/list`, `skills/get`, and `skill://…` resource reads).
-- **Google Antigravity and Gemini listing preparation** — install the bundled Antigravity plugin (`.antigravity-plugin/plugin.json` + `mcp_config.json`) with `agy plugin install ./worldmonitor`. Gemini custom apps and Connected Apps sign in through Google's OAuth callbacks. See [Gemini and Antigravity](https://www.worldmonitor.app/docs/gemini-antigravity).
-- **REST API** — base `https://api.worldmonitor.app`, described by the [OpenAPI spec](https://worldmonitor.app/openapi.yaml).
-- **CLI** — the official [`worldmonitor`](https://www.npmjs.com/package/worldmonitor) npm package (source in [`cli/`](cli/)). Run it with no arguments in a terminal for the [terminal dashboard](https://www.worldmonitor.app/docs/cli-dashboard):
-
-  ```sh
-  npx worldmonitor tools          # run ad-hoc — list every MCP tool (no key needed)
-  npm install -g worldmonitor     # or install the `worldmonitor` (alias `wm`) command
-  brew install worldmonitor       # or install it with Homebrew
-  worldmonitor risk IR --api-key wm_xxx
-  ```
-
-- **SDKs** — official zero-dependency client libraries mirroring the CLI: Python [`worldmonitor-sdk`](https://pypi.org/project/worldmonitor-sdk/) (source in [`sdk/python/`](sdk/python/)), Ruby [`worldmonitor`](https://rubygems.org/gems/worldmonitor) ([`sdk/ruby/`](sdk/ruby/)), Go [`github.com/koala73/worldmonitor/sdk/go`](https://pkg.go.dev/github.com/koala73/worldmonitor/sdk/go) ([`sdk/go/`](sdk/go/)). Guide: [worldmonitor.app/docs/sdks](https://www.worldmonitor.app/docs/sdks).
-
-Agent discovery files: [`llms.txt`](https://worldmonitor.app/llms.txt) · [agent-skills manifest](https://worldmonitor.app/.well-known/agent-skills/index.json) · [api-catalog](https://worldmonitor.app/.well-known/api-catalog). Get an API key at [worldmonitor.app/pro](https://www.worldmonitor.app/pro).
-
----
-
-## Flight Data
-
-Flight data provided graciously by [Wingbits](https://wingbits.com?utm_source=worldmonitor&utm_medium=referral&utm_campaign=worldmonitor), the most advanced ADS-B flight data solution.
-
----
-
-## Supported By
-
-World Monitor's web app and API run on [Vercel](https://vercel.com?utm_source=worldmonitor&utm_medium=referral&utm_campaign=worldmonitor). Thank you to Vercel for their generous support of the project.
-
----
-
-## Data Sources
-
-WorldMonitor aggregates attributed upstream sources across geopolitics, finance, energy, climate, aviation, cyber, military, infrastructure, and news intelligence. Curated feeds and freshness-tracked source groups are published in the full [data sources catalog](https://www.worldmonitor.app/docs/data-sources), with provider, feed-tier, license-posture, and collection-method details.
-
----
-
-## Contributing
-
-Contributions welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+### 1. Get the code
 
 ```bash
-npm run typecheck        # Type checking
-npm run build:full       # Production build
+git clone https://github.com/nviiiivn/emon.git
+cd emon
+npm ci
 ```
 
----
+### 2. Make `.env`
+
+`.env` sits in the repo root and is gitignored. Start with the four secrets World Monitor requires; Compose will not
+start without them:
+
+```bash
+echo "RELAY_SHARED_SECRET=$(openssl rand -hex 32)" >> .env
+echo "REDIS_PASSWORD=$(openssl rand -hex 32)"      >> .env
+echo "REDIS_TOKEN=$(openssl rand -hex 32)"         >> .env
+echo "WM_SESSION_SECRET=$(openssl rand -hex 32)"   >> .env
+echo "WM_PORT=8960"                                >> .env
+```
+
+Then add EMON's own. Every variable is listed under [Keys and settings](#keys-and-settings) below.
+
+```bash
+# the operator key nginx adds to the AI and formerly-Pro routes, so they work without sign-in (never sent to browsers)
+echo "WORLDMONITOR_VALID_KEYS=$(openssl rand -hex 32)" >> .env
+```
+
+### 3. Turn on EMON's container changes
+
+```bash
+cp selfhost/docker-compose.override.example.yml docker-compose.override.yml
+```
+
+The override mounts the EMON web build, nginx template, `selfhost-channels.js`, and the EMON relay and REST-proxy
+files into World Monitor's containers. It also points the AI at the `wm-llm` bridge (step 7). If you skip the AI, the AI
+panels say they are unavailable and everything else works.
+
+### 4. Build the web app
+
+```bash
+sh selfhost/build.sh
+```
+
+This takes 10 to 20 minutes. It ends with `BUILD-OK` and leaves the site in `selfhost/dist`. The build also reads any
+`VITE_*` settings from `.env`. `selfhost/build.sh` turns on `VITE_ENABLE_ORBITAL_WATCH` (satellite pictures in popups)
+by itself.
+
+The source in this repo already has every EMON change in it, so you do **not** run the `selfhost/patch_*.py` scripts.
+They are the record of each change, in the order they were made: `patch_cams*.py`, `airports_block.py`,
+`patch_flights.py`, `patch_variant_urls.py`, `nolinks.py`, `emon_block.py`, `editions.py`, `unhide.py`, `unlock_pro.py`,
+`unlock_export.py`, `news_trim.py`, `patch_overlays.py`, `hidden_block.py` (Nov 19); `patch_planes.py`,
+`patch_fires_boot.py`, `patch_tab_maps.py`, `patch_no_country_click.py`, `patch_flash_label*.py`, `patch_ships.py`,
+`patch_globe_tiles.py` (Nov 20); `patch_pick.py`, `patch_poi.py` (Nov 21); `patch_pulse_panel.py`, `patch_mine.py`,
+`patch_mine2.py`, `patch_mine3.py`, `unhide_mine3.py` (Nov 24). The newer ones skip what is already done. Re-applying
+them to a newer World Monitor checkout has not been tried.
+
+### 5. Start it
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+Open `http://localhost:8960`. The map works at once. The panels fill as the seeders run (next step).
+
+EMON was built against World Monitor's images as published on 2026-11-19 (`main`):
+
+| Image | Digest |
+| --- | --- |
+| `ghcr.io/koala73/worldmonitor-selfhosted` | `sha256:27356ca55d331bee3335eb272220461dbea192580c7e4a3113bed208be0e6a35` |
+| `ghcr.io/koala73/worldmonitor-ais-relay` | `sha256:bd2077a15d81310f1bd0c8200fdeff4c8a9bee92aa5903e078219116a39fee78` |
+| `ghcr.io/koala73/worldmonitor-redis-rest` | `sha256:bd069a23a2174fa7fb03966e1135b3116567f0eab67adabeb9bff58857035ce2` |
+
+`main` moves. If a newer image does not match this web build, pin these digests in `docker-compose.override.yml`
+(`image: ghcr.io/koala73/worldmonitor-selfhosted@sha256:...`).
+
+### 6. Fill it with data (seeders)
+
+The seeders run on the host and write into Redis through `redis-rest` (127.0.0.1:8079). Run all of them once:
+
+```bash
+./scripts/run-seeders.sh
+```
+
+There are about 300, and a full pass takes about 3.5 hours. Some data expires sooner than that, so EMON runs the
+short-lived ones on faster timers. To set them up as user services:
+
+```bash
+mkdir -p ~/.config/systemd/user ~/.local/bin
+cp -r selfhost/systemd/tower/* ~/.config/systemd/user/
+cp selfhost/bin/wm-seed-*.sh ~/.local/bin/ && chmod +x ~/.local/bin/wm-seed-*.sh
+systemctl --user daemon-reload
+systemctl --user enable --now worldmonitor-seed.timer worldmonitor-quick.timer worldmonitor-fast.timer \
+  worldmonitor-weather.timer worldmonitor-social.timer worldmonitor-extra.timer
+loginctl enable-linger "$USER"   # keep the timers running when you are logged out
+```
+
+| Timer | Every | Runs |
+| --- | --- | --- |
+| `worldmonitor-seed` | 30 min after the last pass ends | all seeders (`scripts/run-seeders.sh`) |
+| `worldmonitor-quick` | 10 min | earthquakes, outages, military flights, news insights, correlation cards; security advisories and radiation hourly |
+| `worldmonitor-fast` | 10 min | cross-source signals |
+| `worldmonitor-weather` | 10 min | US / Canada / world weather alerts |
+| `worldmonitor-social` | 15 min | Social Velocity (keyless Reddit archive) |
+| `worldmonitor-extra` | 3 h | GPS jamming, grid disruption clock |
+
+The units and scripts expect the repo at `~/projects/worldmonitor`. If yours is somewhere else, change that path in
+`selfhost/bin/wm-seed-*.sh` and in `worldmonitor-seed.service`.
+
+### 7. Local AI (optional)
+
+EMON runs its own Ollama instance on `127.0.0.1:11436`, separate from any other Ollama on the machine, and a small
+bridge so the app container can reach it:
+
+```bash
+# 1. a second Ollama for EMON (or use your main one and change 11436 in the two scripts below)
+OLLAMA_HOST=127.0.0.1:11436 ollama serve &       # EMON's server runs this as a systemd service
+OLLAMA_HOST=127.0.0.1:11436 ollama pull gemma4:12b
+
+# 2. the host half of the bridge (unix socket -> Ollama), plus the "no thinking" helper the forecast seeders use
+mkdir -p ~/services/wm-llm/sock
+cp selfhost/extras/local-ai/host_relay.py selfhost/extras/local-ai/nothink_proxy.py selfhost/extras/local-ai/container_relay.js ~/services/wm-llm/
+systemctl --user enable --now wm-llm-relay.service wm-llm-nothink.service
+
+# 3. the container half, on the stack's network so the app reaches it as http://wm-llm:11434
+docker run -d --name wm-llm --restart unless-stopped --network "$(basename "$PWD")_default" \
+  -v ~/services/wm-llm/sock:/sock -v ~/services/wm-llm/container_relay.js:/relay.js:ro \
+  node:22-alpine node /relay.js
+```
+
+The model is `OLLAMA_MODEL` in `.env` (default `gemma4:12b`). For the host seeders, set `LLM_API_URL` to the helper
+(`http://127.0.0.1:11439/v1/chat/completions`) and `LLM_MODEL`.
+
+### 8. Put it on a domain
+
+Put a reverse proxy in front. [selfhost/extras/pi-feeds/Caddyfile.example](selfhost/extras/pi-feeds/Caddyfile.example)
+is EMON's own front server with the hostname changed.
+
+**Use a hostname that starts with `emon.`** (for example `emon.example.com`). The add-ons in
+`selfhost/selfhost-channels.js` check for it, and on other hostnames you get World Monitor's own settings for those
+parts. The page's link previews and search-engine data name `emon.alola.lol`. To use your own address there, replace
+it in `index.html`, `src/config/variant-meta.ts`, `src/config/variant-dashboard-html.ts` and the two `sub_filter` lines
+of `selfhost/nginx.conf.template`, then rebuild and run `docker compose up -d`.
+
+### 9. Extra feeds (optional)
+
+`selfhost/extras/pi-feeds/` holds the scripts behind `/local/*` and `/camproxy/*`:
+
+| Script | Writes / serves | Schedule (EMON's server) |
+| --- | --- | --- |
+| `flights.py` | `~/www/emon-local/flights.json`: departure boards for the focus cities' airports (OpenSky) | every 2 h |
+| `fire_perimeters.py` | `~/www/emon-local/fire-perimeters.json`: current wildfire outlines (NIFC, keyless) | every 30 min |
+| `news_local.py` | `~/www/emon-local/news-local.json`: local headlines per city | every 30 min |
+| `cams.py` (+ `build_cams.py`) | `~/www/emon-local/cams.json`: about 40,000 public traffic cameras | daily 04:40 |
+| `camproxy.py` | HTTP on 127.0.0.1:8931: plane and ship lookups, aircraft emergencies, camera snapshots, satellite pictures | always on |
+
+Their systemd units are in `selfhost/systemd/pi/`. They expect the scripts in `~/services/emon-feeds/` (and
+`flights.py` in `~/services/emon-flights/`), plus `build_cams.py` at `~/projects/emon/build_cams.py`. Serve
+`~/www/emon-local` at `/local/` as in the Caddyfile example.
+
+`camproxy.py` reads settings from an environment file (see the comment in `emon-camproxy.service`):
+
+- `CDSE_CLIENT_ID` and `CDSE_CLIENT_SECRET` (optional): a free [Copernicus Data Space](https://dataspace.copernicus.eu)
+  account, used for the Sentinel-2 close-up pictures. Without it you get only NASA's wide view.
+- `EMON_AIS_STATIC_SSH` (optional): `user@host` of the machine running the stack, if it is a different machine. It is used
+  to read the ship details the EMON relay writes to `selfhost/nvii-data/ais-static.json`. `EMON_AIS_STATIC_PATH` sets
+  that file's path if your checkout is not `~/projects/worldmonitor`.
+
+## Keys and settings
+
+Names only. The values go in `.env` (or a systemd environment file) and never in the repo. World Monitor's full list,
+with sign-up links, is in [SELF_HOSTING.md](SELF_HOSTING.md#-api-keys) and `.env.example`.
+
+**Required by Compose**
+
+| Name | What it is for |
+| --- | --- |
+| `RELAY_SHARED_SECRET` | the app ↔ relay shared secret |
+| `REDIS_PASSWORD` | Redis password |
+| `REDIS_TOKEN` | token for `redis-rest`; the seeders use it too |
+| `WM_SESSION_SECRET` | signs anonymous browser sessions (32+ characters) |
+
+**EMON**
+
+| Name | Required? | What it is for |
+| --- | --- | --- |
+| `WORLDMONITOR_VALID_KEYS` | yes, for the AI and the formerly-Pro panels | the operator key; nginx adds it on those routes (as `LOCAL_API_TOKEN`) |
+| `WM_PORT` | no (default 3000) | host port of the app; EMON uses 8960 |
+| `WM_IMAGE_TAG` | no (default `main`) | World Monitor image tag |
+| `OLLAMA_MODEL` | no (default `gemma4:12b`) | model for the AI features |
+| `LLM_API_URL`, `LLM_MODEL` | no | AI for the host seeders (forecasts, briefs); point at the `nothink_proxy.py` helper |
+| `WORLDMONITOR_SEED_REFRESH_KEY` | no | lets seeders (such as `seed-resilience-scores.mjs`) make the API rebuild cached results; any `openssl rand -hex 32` value, the same in `.env` for both |
+| `VITE_ENABLE_ORBITAL_WATCH` | build-time; `selfhost/build.sh` sets it | satellite pictures in map popups |
+| `ORBITAL_WATCH_ENABLED` | set in the override | server half of the same feature |
+
+**Data sources (all optional; each one fills more panels)**
+
+| Name | Source | Fills |
+| --- | --- | --- |
+| `NASA_FIRMS_API_KEY` | NASA FIRMS (free) | fire detections |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare Radar (free) | internet outages |
+| `AISSTREAM_API_KEY` | aisstream.io (free) | live ships |
+| `OPENSKY_CLIENT_ID`, `OPENSKY_CLIENT_SECRET` | OpenSky (free account) | flights, at higher rate limits |
+| `FRED_API_KEY`, `EIA_API_KEY` | FRED, EIA (free) | economy and energy panels |
+| `FINNHUB_API_KEY`, `ALPHA_VANTAGE_API_KEY` | Finnhub, Alpha Vantage (free tiers) | markets |
+| `ACLED_EMAIL` + `ACLED_PASSWORD`, or `ACLED_ACCESS_TOKEN` | ACLED | conflict and unrest events |
+| `UCDP_ACCESS_TOKEN` | UCDP | conflict events (relay) |
+| `AVIATIONSTACK_API` | AviationStack (free tier) | airport delays |
+| `X_BEARER_TOKEN`, `X_CURATED_LIST_ID` | X API (paid) | the X panel; empty without it |
+| `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `TELEGRAM_SESSION` | a Telegram account | the Telegram panel; empty without it |
+| `EXA_API_KEYS`, `FIRECRAWL_API_KEY` | Exa, Firecrawl (paid) | Grocery Basket; empty without them |
+
+Not set up on EMON: Consumer Prices. It needs World Monitor's separate `consumer-prices-core` service and a Postgres
+database. The relay's X and Telegram keys have to be passed in the override; SELF_HOSTING.md shows how.
+
+## Updating
+
+```bash
+git pull
+npm ci
+sh selfhost/build.sh                 # swaps the new site into selfhost/dist; no restart needed
+docker compose up -d                 # only if the override or .env changed
+```
+
+Run `docker compose pull` only when moving to newer World Monitor images, and rebuild after it. If the timer units or
+scripts changed, copy them again and run `systemctl --user daemon-reload`.
+
+## Layout
+
+| Path | What is there |
+| --- | --- |
+| `src/`, `index.html`, `vite.config.ts` | the web app, with EMON's changes applied |
+| `selfhost/build.sh` | build the web app into `selfhost/dist` |
+| `selfhost/docker-compose.override.example.yml` | EMON's container changes (copy to `docker-compose.override.yml`) |
+| `selfhost/nginx.conf.template` | the image's nginx template, plus the AI-key, rate-limit and naming blocks |
+| `selfhost/selfhost-channels.js` | EMON add-ons that run in the page (editions menu, tabs, North America setup, theme, map extras) |
+| `selfhost/relay/`, `selfhost/redis-rest/` | the relay and REST-proxy files EMON runs, next to the untouched `*.from-image.*` copies |
+| `selfhost/patch_*.py`, `unlock_*.py`, `*_block.py` | the record of every EMON change (already applied in `src/`) |
+| `selfhost/systemd/tower/`, `selfhost/bin/` | the seeder and local-AI services and timers |
+| `selfhost/systemd/pi/`, `selfhost/extras/pi-feeds/` | the extra feeds, their services and the Caddy example |
+| `selfhost/extras/local-ai/` | the Ollama bridge and the no-thinking helper |
 
 ## License
 
-**AGPL-3.0-only** for the source code. Commercial use is permitted under the AGPL when you comply with its copyleft and source-availability terms.
+AGPL-3.0, the same as World Monitor ([LICENSE](LICENSE)). If you run a modified copy for other people, the AGPL asks you
+to offer them its source code. EMON's footer links here for that reason.
 
-| Use Case | Allowed? |
-|----------|----------|
-| Personal / research / educational | Yes, under AGPL-3.0-only |
-| Self-hosted instance | Yes, under AGPL-3.0-only |
-| Fork and modify | Yes, share source under AGPL-3.0-only when required |
-| Commercial use / SaaS | Yes, under AGPL-3.0-only when you comply with AGPL obligations |
-| Private-source proprietary use or official branding rights | Separate commercial or trademark permission needed |
-
-See [LICENSE](LICENSE) for the full code license and [docs/license.mdx](docs/license.mdx) for a plain-language summary. Commercial licensing is available as an alternative option for teams that need non-AGPL terms.
-
-Copyright (C) 2026 Elie Habib. All rights reserved.
-
----
-
-## Author
-
-**Elie Habib** — [GitHub](https://github.com/koala73)
-
-## Contributors
-
-<a href="https://github.com/koala73/worldmonitor/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=koala73/worldmonitor" />
-</a>
-
-## Security Acknowledgments
-
-We thank the following researchers for responsibly disclosing security issues:
-
-- **Cody Richard** — Disclosed three security findings covering IPC command exposure, renderer-to-sidecar trust boundary analysis, and fetch patch credential injection architecture (2026)
-
-See our [Security Policy](./SECURITY.md) for responsible disclosure guidelines.
-
----
-
-<p align="center">
-  <a href="https://www.worldmonitor.app">worldmonitor.app</a> &nbsp;·&nbsp;
-  <a href="https://www.worldmonitor.app/docs/documentation">docs.worldmonitor.app</a> &nbsp;·&nbsp;
-  <a href="https://finance.worldmonitor.app">finance.worldmonitor.app</a> &nbsp;·&nbsp;
-  <a href="https://commodity.worldmonitor.app">commodity.worldmonitor.app</a>
-</p>
-
-## Star History
-
-<a href="https://star-history.dera.page/#koala73/worldmonitor&type=Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=koala73/worldmonitor&type=Date&theme=dark" />
-   <img alt="Star History Chart" src="https://star-history.dera.page/svg?repos=koala73/worldmonitor&type=Date" />
- </picture>
-</a>
+Built on [koala73/worldmonitor](https://github.com/koala73/worldmonitor) (AGPL-3.0). All credit for the original
+dashboard goes to its authors.
