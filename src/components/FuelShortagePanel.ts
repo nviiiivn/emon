@@ -151,8 +151,7 @@ export class FuelShortagePanel extends Panel {
       infoTooltip:
         'Global fuel-shortage alert registry (petrol, diesel, jet, heating oil). Severity ' +
         '(confirmed / watch) is a classifier output, not a client derivation. Every row ' +
-        'carries the full evidence source list — see /docs/methodology/shortages for the ' +
-        'threshold spec + classifier version.',
+        'carries the full evidence source list.',
     });
     this.scopeFilter = new PanelScopeFilter({ content: this.content, onChange: () => this.render() });
     if (typeof window !== 'undefined') {
@@ -321,7 +320,6 @@ export class FuelShortagePanel extends Panel {
       updatedAt: this.data.fetchedAt,
       classifierVersion: this.data.classifierVersion,
       creditName: 'Regulator advisories + IEA + major wire',
-      creditUrl: '/docs/methodology/shortages',
     });
 
     const drawer = this.selectedId ? this.renderDrawer() : '';

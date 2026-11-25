@@ -193,8 +193,7 @@ export class StorageFacilityMapPanel extends Panel {
       infoTooltip:
         'Curated registry of strategic storage assets — underground gas storage, strategic ' +
         'petroleum reserves, LNG terminals, crude tank farms. Public badge is derived from ' +
-        'evidence (operator statements, sanction refs, commercial state, physical signals) — ' +
-        'see /docs/methodology/storage for the classifier spec.',
+        'evidence (operator statements, sanction refs, commercial state, physical signals).',
     });
     if (!this.detailSource && typeof window !== 'undefined') {
       window.addEventListener('energy:open-storage-facility-detail', this.claimStorageClick);

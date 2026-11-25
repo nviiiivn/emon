@@ -100,7 +100,7 @@ const DEPENDENCY_FLAG_LABELS: Record<string, { text: string; cls: string }> = {
 };
 import { toApiUrl } from '@/services/runtime';
 import type { ComputeEnergyShockScenarioResponse, CrudeShareBaseline, ImageryChangeContext, ProductImpact, RegionalEnergyFeed } from '@/generated/client/worldmonitor/intelligence/v1/service_client';
-import { IMAGERY_CONTEXT_EXCLUSION, IMAGERY_CONTEXT_METHODOLOGY_HREF, imageryChangeSummary } from './_risk-imagery-context';
+import { IMAGERY_CONTEXT_EXCLUSION, imageryChangeSummary } from './_risk-imagery-context';
 import { setTrustedHtml, trustedHtml } from '@/utils/dom-utils';
 import { confirmShareLinkCopied, createShareLinkButton } from './share-link-button';
 import { copyText } from '@/utils/copy-text';
@@ -3032,11 +3032,7 @@ export class CountryDeepDivePanel implements CountryBriefPanel {
     this.commodityVulnerabilityBody.append(list);
     const footer = this.el('div', 'cdp-card-footer');
     footer.append(document.createTextNode(`${t('components.supplyVulnerability.methodology')}: `));
-    const link = this.el('a', 'cdp-vulnerability-methodology', data.methodologyVersion);
-    link.href = '/docs/methodology/supply-vulnerability';
-    link.target = '_blank';
-    link.rel = 'noopener';
-    footer.append(link);
+    footer.append(this.el('span', 'cdp-vulnerability-methodology', data.methodologyVersion)); // nvii-mine-3: plain text, no upstream docs link
     this.commodityVulnerabilityBody.append(footer);
   }
 
@@ -3410,12 +3406,7 @@ export class CountryDeepDivePanel implements CountryBriefPanel {
       this.imageryContext.replaceChildren();
       return;
     }
-    const link = this.el('a', '', 'Methodology');
-    link.setAttribute('href', IMAGERY_CONTEXT_METHODOLOGY_HREF);
-    link.setAttribute('target', '_blank');
-    link.setAttribute('rel', 'noopener noreferrer');
-    const exclusion = this.el('p', 'cdp-imagery-exclusion', `${IMAGERY_CONTEXT_EXCLUSION} `);
-    exclusion.append(link);
+    const exclusion = this.el('p', 'cdp-imagery-exclusion', IMAGERY_CONTEXT_EXCLUSION); // nvii-mine-3: no upstream docs link
     this.imageryContext.replaceChildren(this.el('p', 'cdp-imagery-summary', summary), exclusion);
     if (this.scoreCard && !this.imageryContext.isConnected) this.scoreCard.append(this.imageryContext);
   }

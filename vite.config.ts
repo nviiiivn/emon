@@ -1200,14 +1200,14 @@ export default defineConfig(({ mode }) => {
               sizes: '1440x900',
               type: 'image/jpeg',
               form_factor: 'wide',
-              label: 'World Monitor desktop dashboard with conflict zones, intelligence hotspots, and live news',
+              label: 'EMON Earth Monitor on a desktop',
             },
             {
               src: '/pwa/dashboard-narrow.jpg',
               sizes: '390x844',
               type: 'image/jpeg',
               form_factor: 'narrow',
-              label: 'World Monitor mobile map with conflict zones and intelligence hotspots',
+              label: 'EMON Earth Monitor on a phone',
             },
           ],
           shortcuts: [

@@ -16099,7 +16099,7 @@ button.popup-link {
     padding-left: 0 !important;
   }
 
-  .header-right > :not(#authWidgetMount),
+  .header-right > *,
   #authWidgetMount .auth-free-reason,
   #authWidgetMount .auth-header-skeleton-reason {
     display: none !important;
