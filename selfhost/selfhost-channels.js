@@ -101,35 +101,6 @@
   } catch (e) { /* storage blocked: plain World Monitor */ }
 })();
 
-/* 2026-11-19 her rule: nothing links to worldmonitor.app. Every such link (including ones the app adds
-   later) is pointed at the same page on this site; edition links go to /tech, /finance, /commodity,
-   /energy, /good-news. Nothing is hidden. */
-(function () {
-  var ED = { tech: '/tech', finance: '/finance', commodity: '/commodity', energy: '/energy', happy: '/good-news' };
-  function fix(a) {
-    var h = a.getAttribute('href');
-    if (!h || h.indexOf('worldmonitor.app') === -1) return;
-    try {
-      var u = new URL(h, location.href);
-      var sub = u.hostname.split('.')[0];
-      var path = u.pathname + u.search + u.hash;
-      if (ED[sub]) path = ED[sub];
-      else if (u.pathname === '/dashboard') path = '/' + u.search + u.hash;
-      a.setAttribute('href', path);
-    } catch (e) { /* leave it */ }
-  }
-  function sweep() { try { document.querySelectorAll('[href*="worldmonitor.app"]').forEach(fix); } catch (e) {} }
-  var queued = false;
-  function start() {
-    sweep();
-    new MutationObserver(function () {
-      if (queued) return; queued = true;
-      setTimeout(function () { queued = false; sweep(); }, 1500); /* at most every 1.5 s: a per-frame full-page sweep froze the live dashboard */
-    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['href'] });
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
-})();
-
 /* Airline Intelligence airports (2026-11-19, EMON only): her cities' main airports, top cities first
    (the app keeps 20 max). Set once per browser; edits in the panel afterwards stick. On any other host
    (worldmonitor.alola.lol) an earlier copy of this setting is taken back out so it keeps the app default. */
@@ -150,29 +121,6 @@
     localStorage.setItem(KEY, JSON.stringify(wl));
     localStorage.setItem(MARK, '1');
   } catch (e) { /* storage blocked */ }
-})();
-
-/* nvii-nopro-v1 (2026-11-19 her final rule): hide any button or link whose text asks to sign in, upgrade,
-   unlock, subscribe or see pricing, including ones the app adds later. Hides only; never changes links. */
-(function () {
-  var RE = /^(sign ?in|sign ?up|log ?in|create (an )?account|upgrade|get pro|go pro|unlock|start (a )?free trial|subscribe|see pricing|view pricing|resubscribe)\b/i;
-  function sweep() {
-    try {
-      document.querySelectorAll('a, button, [role="button"]').forEach(function (el) {
-        var label = (el.textContent || el.getAttribute('aria-label') || '').trim();
-        if (RE.test(label)) el.style.setProperty('display', 'none', 'important');
-      });
-    } catch (e) { /* never break the page */ }
-  }
-  var queued = false;
-  function start() {
-    sweep();
-    new MutationObserver(function () {
-      if (queued) return; queued = true;
-      setTimeout(function () { queued = false; sweep(); }, 1500); /* at most every 1.5 s: a per-frame full-page sweep froze the live dashboard */
-    }).observe(document.body, { childList: true, subtree: true });
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
 
 /* nvii-hidden-v1 (2026-11-19): panels and map layers she marked "Hide this everywhere" on alola.lol/emon-index
@@ -370,45 +318,6 @@
     }
     localStorage.setItem(DONE, JSON.stringify(done));
   } catch (e) { /* storage blocked: the panel can still be switched on in the gear menu */ }
-})();
-
-/* nvii-mobile-menu-v1 (2026-11-24, her catch): the phone menu (hamburger) still listed the app's six editions with
-   Good News, no War or Weather, plus Sign In, the upstream author's X link and Pricing. It now lists EMON's editions like
-   the desktop edition menu: World, War, Weather, Tech, Finance, Commodity, Energy (Good News is gone, /good-news still
-   loads if typed). Title reads EMON EARTH MONITOR; sign-in, author link, Pricing and the footer links are hidden (Countries, Chokepoints,
-   Crises, Tools, Accuracy, Blog, Docs and Status only reloaded the dashboard here; GitHub pointed at upstream). Mission was already hidden
-   by nvii-editions-menu-v1. EMON only. Remove this block to get the app's phone menu back. */
-(function () {
-  try {
-    if (!/^emon\./.test(location.hostname)) return;
-    var EDS = [['full', '🌍', 'World', '/'], ['war', '⚔️', 'War', '/war'], ['weather', '⛈️', 'Weather', '/weather'],
-      ['tech', '💻', 'Tech', '/tech'], ['finance', '📈', 'Finance', '/finance'],
-      ['commodity', '⛏️', 'Commodity', '/commodity'], ['energy', '⚡', 'Energy', '/energy']];
-    var st = document.createElement('style');
-    st.textContent = '#mobileMenu .mobile-menu-variant,#mobileMenu .mobile-menu-account,#mobileMenu a[href*="x.com/"],#mobileMenu #mobileMenuMission,#mobileMenu .mobile-menu-footer-links{display:none!important}' +
-      '#mobileMenu a.nvii-mm-ed{text-decoration:none;color:inherit}';
-    document.head.appendChild(st);
-    function fix() {
-      var menu = document.getElementById('mobileMenu'); if (!menu) return;
-      var title = menu.querySelector('.mobile-menu-title'); if (title && title.textContent !== 'EMON EARTH MONITOR') title.textContent = 'EMON EARTH MONITOR';
-      [].slice.call(menu.querySelectorAll('a')).forEach(function (a) { if (/^\s*pricing\s*$/i.test(a.textContent || '')) a.style.setProperty('display', 'none', 'important'); });
-      if (menu.querySelector('.nvii-mm-ed')) return;
-      var first = menu.querySelector('.mobile-menu-variant'); if (!first) return;
-      var cur = window.__nviiEmonEdition || 'full';
-      EDS.forEach(function (e) {
-        var a = document.createElement('a'); a.className = 'mobile-menu-item nvii-mm-ed' + (e[0] === cur ? ' active' : ''); a.href = e[3];
-        var i = document.createElement('span'); i.className = 'mobile-menu-item-icon'; i.textContent = e[1];
-        var l = document.createElement('span'); l.className = 'mobile-menu-item-label'; l.textContent = e[2];
-        a.append(i, l);
-        if (e[0] === cur) { var c = document.createElement('span'); c.className = 'mobile-menu-check'; c.textContent = '✓'; a.append(c); }
-        first.parentNode.insertBefore(a, first);
-      });
-    }
-    var run = function () { try { fix(); } catch (e) { /* leave the menu as it is */ } };
-    var start = function () { run(); new MutationObserver(run).observe(document.body, { childList: true, subtree: false }); };
-    if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
-    setTimeout(run, 3000); setTimeout(run, 10000);
-  } catch (e) { /* ignore */ }
 })();
 
 /* nvii-setups-v1 (2026-11-20, her ask): one-link EMON setups.
