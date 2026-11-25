@@ -1,0 +1,6 @@
+[Unit]
+Description=World Monitor: weather alerts only (her ask 2026-11-19)
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/wm-seed-weather.sh
+TimeoutStartSec=6min

@@ -1,0 +1,11 @@
+[Unit]
+Description=World Monitor: refresh public data (run-seeders.sh)
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/projects/worldmonitor
+Environment=PATH=/usr/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/bin/sh ./scripts/run-seeders.sh
+Nice=10
+TimeoutStartSec=50min

@@ -1,0 +1,6 @@
+[Unit]
+Description=EMON flight boards from OpenSky (~/services/emon-flights/flights.py)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -I %h/services/emon-flights/flights.py

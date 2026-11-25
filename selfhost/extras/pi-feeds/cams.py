@@ -350,6 +350,31 @@ def texas():
     return cams
 
 
+def illinois():
+    """Illinois DOT statewide cameras (ArcGIS layer behind Getting Around Illinois); covers Chicago. Plain JPEG snapshots."""
+    base = ("https://services2.arcgis.com/aIrBD8yn1TDTEXoz/arcgis/rest/services/TrafficCamerasTM_Public/FeatureServer/0/query"
+            "?where=1%3D1&outFields=CameraLocation,CameraDirection,SnapShot,TooOld,x,y&f=json&resultRecordCount=2000&resultOffset=")
+    cams, offset = [], 0
+    while offset < 12000:
+        d = json.loads(fetch(base + str(offset)))
+        feats = d.get("features") or []
+        for f in feats:
+            a = f.get("attributes") or {}
+            url = a.get("SnapShot") or ""
+            if not url.startswith("https://") or a.get("TooOld") == "true" or a.get("y") is None:
+                continue
+            direction = (a.get("CameraDirection") or "").strip()
+            name = (a.get("CameraLocation") or "Illinois camera").strip()
+            if direction and direction != "NONE":
+                name += f" ({direction})"
+            cams.append({"name": name, "city": "", "state": "IL", "lat": a["y"], "lon": a["x"], "kind": "traffic",
+                         "src": "Illinois DOT", "img": url, "refresh": 120})
+        if not d.get("exceededTransferLimit") or not feats:
+            break
+        offset += len(feats)
+    return cams
+
+
 def main():
     cams = base_sources()
     report = {}
@@ -359,6 +384,7 @@ def main():
     jobs += [(CARS_HOSTS[c][0], (lambda c=c: carsprogram(c))) for c in CARS_HOSTS]
     jobs += [("Michigan MiDrive", michigan)]
     jobs += [("TxDOT", texas)]
+    jobs += [("Illinois DOT", illinois)]
     jobs += [(ITERIS[c][0], (lambda c=c: iteris(c))) for c in ITERIS]
     hls_jobs = [("Maryland CHART", maryland)]
 

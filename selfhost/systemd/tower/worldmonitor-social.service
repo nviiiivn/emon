@@ -1,0 +1,5 @@
+[Unit]
+Description=EMON Social Velocity (keyless Reddit archive)
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/wm-seed-social.sh

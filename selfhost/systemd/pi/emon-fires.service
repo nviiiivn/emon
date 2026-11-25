@@ -1,0 +1,6 @@
+[Unit]
+Description=EMON feed: wildfire outlines (NIFC), her ask 2026-11-19
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -I %h/services/emon-feeds/fire_perimeters.py
+TimeoutStartSec=5min

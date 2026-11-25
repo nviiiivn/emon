@@ -1,0 +1,9 @@
+[Unit]
+Description=EMON quick refresh: correlation panels + inputs every 10 min, advisories + radiation hourly
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/wm-seed-quick.sh
+Nice=10
+TimeoutStartSec=15min

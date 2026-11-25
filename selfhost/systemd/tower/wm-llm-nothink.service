@@ -1,0 +1,8 @@
+[Unit]
+Description=EMON local-AI helper: turns model thinking off for the forecast seeders (127.0.0.1:11439 -> Ollama)
+[Service]
+ExecStart=/usr/bin/python3 %h/services/wm-llm/nothink_proxy.py
+Restart=always
+RestartSec=3
+[Install]
+WantedBy=default.target

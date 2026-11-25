@@ -1,0 +1,8 @@
+[Unit]
+Description=EMON local-AI bridge (unix socket -> Ollama 127.0.0.1:11434)
+[Service]
+ExecStart=/usr/bin/python3 %h/services/wm-llm/host_relay.py
+Restart=always
+RestartSec=3
+[Install]
+WantedBy=default.target

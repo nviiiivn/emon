@@ -1,0 +1,9 @@
+[Unit]
+Description=EMON quick refresh every 10 minutes (her ask 2026-11-24: fix the empty panels)
+
+[Timer]
+OnActiveSec=2min
+OnUnitActiveSec=10min
+
+[Install]
+WantedBy=timers.target

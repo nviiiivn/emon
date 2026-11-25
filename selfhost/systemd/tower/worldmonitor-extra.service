@@ -1,0 +1,5 @@
+[Unit]
+Description=EMON extra seeders (GPS jamming, grid disruption clock)
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/wm-seed-extra.sh
