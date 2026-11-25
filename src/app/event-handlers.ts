@@ -438,6 +438,7 @@ export class EventHandlerManager implements AppModule {
     this.stopInteractionAnalytics = observeDashboardFirstInteraction(this.ctx.container);
     this.setupSearchControls();
     this.setupEventListeners();
+    window.addEventListener('nvii-tab-map', ((e: Event) => { this.applyNviiTabMap((e as CustomEvent).detail); }) as EventListener); // nvii-tab-map
     this.mobilePrimaryNav.init();
     this.setupIdleDetection();
     this.setupTvMode();
@@ -1380,6 +1381,30 @@ export class EventHandlerManager implements AppModule {
     return enforceFreePanelLimit(panelSettings, false);
   }
 
+
+  // nvii-tab-map (EMON): apply the map a dashboard tab carries (layers, position, time range).
+  private applyNviiTabMap(m: { layers?: Record<string, boolean>; lat?: number; lon?: number; zoom?: number; view?: string; timeRange?: string } | null | undefined): void {
+    if (!m || this.ctx.isDestroyed) return;
+    try {
+      if (m.layers) {
+        const next = { ...this.getMissionDefaultLayers() } as unknown as Record<string, boolean>;
+        for (const k of Object.keys(next)) next[k] = m.layers[k] === true;
+        const mapLayers = this.filterMissionLayersForCurrentRenderer(next as unknown as MapLayers);
+        const previous = { ...this.ctx.mapLayers };
+        this.ctx.mapLayers = mapLayers;
+        saveToStorage(STORAGE_KEYS.mapLayers, mapLayers);
+        this.ctx.map?.setLayers(mapLayers);
+        this.applyMissionMapLayerTransitions(previous, mapLayers);
+      }
+      if (typeof m.lat === 'number' && typeof m.lon === 'number') this.ctx.map?.setCenter(m.lat, m.lon, m.zoom);
+      else if (m.view) this.ctx.map?.setView(m.view as MapView, m.zoom);
+      if (m.timeRange) this.ctx.map?.setTimeRange(m.timeRange as Parameters<NonNullable<typeof this.ctx.map>['setTimeRange']>[0]);
+      this.callbacks.syncDataFreshnessWithLayers();
+      this.scheduleMissionDataRefresh();
+      this.syncUrlState();
+    } catch (err) { console.warn('[nvii-tab-map] failed:', (err as Error)?.message); }
+  }
+
   private applyMissionPreset(presetId: MissionPresetId, source: 'user' | 'agent' = 'user'): boolean {
     const focusPreset = getMissionPreset(presetId);
     const canFocus = this.callbacks.canUseFocus?.() === true;
@@ -1813,7 +1838,7 @@ export class EventHandlerManager implements AppModule {
 
     const preview = document.createElement('iframe');
     preview.className = 'embed-preview-frame';
-    preview.title = 'World Monitor live map preview';
+    preview.title = 'EMON Earth Monitor live map preview';
     preview.loading = 'lazy';
     preview.referrerPolicy = 'strict-origin-when-cross-origin';
     preview.src = embedUrl;

@@ -3645,7 +3645,7 @@ export class CountryDeepDivePanel implements CountryBriefPanel {
     const flag = this.el('span', 'cdp-flag', CountryDeepDivePanel.toFlagEmoji(code));
     const titleWrap = this.el('div', 'cdp-title-wrap');
     const name = this.el('h2', 'cdp-country-name', country);
-    const subtitle = this.el('div', 'cdp-country-subtitle', `WORLD MONITOR · COUNTRY BRIEF · ${code.toUpperCase()}`);
+    const subtitle = this.el('div', 'cdp-country-subtitle', `EMON EARTH MONITOR · COUNTRY BRIEF · ${code.toUpperCase()}`);
     titleWrap.append(subtitle, name);
 
     // `resetPanelContent` (called at the top of renderSkeleton) already
@@ -3719,7 +3719,7 @@ export class CountryDeepDivePanel implements CountryBriefPanel {
     });
     const evidenceButton = this.el('button', 'cdp-action-btn cdp-evidence-export-btn', 'Evidence') as HTMLButtonElement;
     evidenceButton.setAttribute('type', 'button');
-    evidenceButton.setAttribute('title', 'Export evidence bundle as Markdown (PRO)');
+    evidenceButton.setAttribute('title', 'Export evidence bundle as Markdown');
     evidenceButton.addEventListener('click', async () => {
       if (evidenceButton.disabled) return;
       if (!this.canRequestPremium()) {

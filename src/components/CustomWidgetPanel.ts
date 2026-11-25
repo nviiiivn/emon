@@ -4,6 +4,7 @@ import { t } from '@/services/i18n';
 import { wrapWidgetHtml, wrapProWidgetHtml } from '@/utils/widget-sanitizer';
 import { h } from '@/utils/dom-utils';
 import { unsafeRawHtml } from '@/utils/sanitize';
+const TAG_NVII = true; // nvii-mine-2: EMON shows no PRO badges
 
 export class CustomWidgetPanel extends Panel {
   private spec: CustomWidgetSpec;
@@ -37,7 +38,7 @@ export class CustomWidgetPanel extends Panel {
       }));
     });
 
-    if (this.spec.tier === 'pro') {
+    if (this.spec.tier === 'pro' && !TAG_NVII) {
       const badge = h('span', { className: 'widget-pro-badge' }, t('widgets.proBadge'));
       if (closeBtn) {
         this.header.insertBefore(badge, closeBtn);

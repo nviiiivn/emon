@@ -1212,7 +1212,233 @@ export class DeckGLMap {
         map.removeSource('nvii-fire-perimeters');
         if (this.nviiFireTimer) { clearInterval(this.nviiFireTimer); this.nviiFireTimer = null; }
       }
+      this.syncNviiPlanes(map); // nvii-planes
+      // nvii-flash-test: lets a test fire one labeled flash: window.dispatchEvent(new CustomEvent('nvii-flash', { detail: { lat, lon, title, source, link } }))
+      if (!(window as unknown as { __nviiFlashHook?: boolean }).__nviiFlashHook) {
+        (window as unknown as { __nviiFlashHook?: boolean }).__nviiFlashHook = true;
+        window.addEventListener('nvii-flash', (ev) => {
+          const d = (ev as CustomEvent<{ lat: number; lon: number; title: string; source?: string; link?: string }>).detail;
+          if (d && Number.isFinite(d.lat) && Number.isFinite(d.lon)) this.flashLocation(d.lat, d.lon, 12000, { title: String(d.title || ''), source: d.source, link: d.link });
+        });
+      }
+      this.syncNviiShips(map); // nvii-ships
+      this.syncNviiPoi(map); // nvii-poi
     } catch (err) { console.warn('[DeckGLMap] nvii overlays failed:', (err as Error)?.message); }
+  }
+
+
+  // ---- nvii-planes (EMON): live aircraft near the map centre, shown with the Aviation layer ----
+  private nviiPlaneTimer: ReturnType<typeof setInterval> | null = null;
+  private nviiPlaneBound = false;
+
+  private nviiPlaneIcons(map: maplibregl.Map): void {
+    for (const [name, color] of [['nvii-plane-civ', '#ffd60a'], ['nvii-plane-mil', '#ff3b30']] as const) {
+      if (map.hasImage(name)) continue;
+      const size = 32;
+      const c = document.createElement('canvas');
+      c.width = size; c.height = size;
+      const g = c.getContext('2d');
+      if (!g) continue;
+      g.beginPath(); // arrow pointing north; the layer rotates it to the aircraft's track
+      g.moveTo(16, 2); g.lineTo(27, 29); g.lineTo(16, 22); g.lineTo(5, 29); g.closePath();
+      g.fillStyle = color; g.fill();
+      g.lineWidth = 2; g.strokeStyle = 'rgba(0,0,0,0.85)'; g.stroke();
+      const img = g.getImageData(0, 0, size, size);
+      map.addImage(name, { width: size, height: size, data: new Uint8Array(img.data.buffer) });
+    }
+  }
+
+  private async nviiPlaneFetch(): Promise<void> {
+    const map = this.maplibreMap;
+    const src = map?.getSource('nvii-planes') as (maplibregl.GeoJSONSource | undefined);
+    if (!map || !src) return;
+    if (map.getZoom() < 4.5) { src.setData(JSON.parse('{"type":"FeatureCollection","features":[]}')); return; }
+    const c = map.getCenter();
+    const r = map.getZoom() >= 7 ? 120 : 250;
+    try {
+      const resp = await fetch(`/camproxy/planes.json?lat=${c.lat.toFixed(1)}&lon=${c.lng.toFixed(1)}&r=${r}`);
+      if (!resp.ok) return;
+      const data = await resp.json();
+      (this.maplibreMap?.getSource('nvii-planes') as (maplibregl.GeoJSONSource | undefined))?.setData(data);
+    } catch { /* keep the last positions */ }
+  }
+
+  private syncNviiPlanes(map: maplibregl.Map): void {
+    const want = !!this.state.layers.flights;
+    if (want && !map.getSource('nvii-planes')) {
+      this.nviiPlaneIcons(map);
+      map.addSource('nvii-planes', { type: 'geojson', data: JSON.parse('{"type":"FeatureCollection","features":[]}') });
+      map.addLayer({
+        id: 'nvii-planes-layer', type: 'symbol', source: 'nvii-planes',
+        layout: {
+          'icon-image': ['case', ['get', 'mil'], 'nvii-plane-mil', 'nvii-plane-civ'],
+          'icon-size': ['interpolate', ['linear'], ['zoom'], 4, 0.3, 8, 0.55, 11, 0.8],
+          'icon-rotate': ['get', 'track'], 'icon-rotation-alignment': 'map',
+          'icon-allow-overlap': true, 'icon-ignore-placement': true,
+        },
+      });
+      if (!this.nviiPlaneBound) {
+        this.nviiPlaneBound = true;
+        map.on('moveend', () => { void this.nviiPlaneFetch(); });
+        map.on('click', 'nvii-planes-layer', (e) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          const pr = f.properties as Record<string, unknown>;
+          const box = document.createElement('div');
+          const title = document.createElement('strong');
+          title.textContent = `${String(pr.flight || pr.reg || pr.hex || 'Aircraft')}${pr.mil ? ' (military)' : ''}`;
+          const l1 = document.createElement('div');
+          l1.textContent = String(pr.desc || pr.type || 'type unknown');
+          const l2 = document.createElement('div');
+          l2.textContent = pr.ground ? 'on the ground' : `${Number(pr.alt ?? 0).toLocaleString()} ft · ${String(pr.gs ?? 0)} kt · heading ${String(pr.track ?? 0)}°`;
+          box.append(title, l1, l2);
+          new maplibregl.Popup({ closeButton: true, maxWidth: '260px' }).setLngLat(e.lngLat).setDOMContent(box).addTo(map);
+        });
+      }
+      if (!this.nviiPlaneTimer) {
+        this.nviiPlaneTimer = setInterval(() => { if (!document.hidden) void this.nviiPlaneFetch(); }, 20000);
+      }
+      void this.nviiPlaneFetch();
+    } else if (!want && map.getSource('nvii-planes')) {
+      if (map.getLayer('nvii-planes-layer')) map.removeLayer('nvii-planes-layer');
+      map.removeSource('nvii-planes');
+      if (this.nviiPlaneTimer) { clearInterval(this.nviiPlaneTimer); this.nviiPlaneTimer = null; }
+    }
+  }
+
+
+  // ---- nvii-ships (EMON): live ships near the map centre, shown with the Ship Traffic layer ----
+  private nviiShipTimer: ReturnType<typeof setInterval> | null = null;
+  private nviiShipBound = false;
+
+  private nviiShipIcons(map: maplibregl.Map): void {
+    const colors: Record<string, string> = { mil: '#ff3b30', tanker: '#ff9f0a', cargo: '#30d158', pass: '#40a9ff', other: '#c7c7cc' };
+    for (const [kind, color] of Object.entries(colors)) {
+      const name = `nvii-ship-${kind}`;
+      if (map.hasImage(name)) continue;
+      const size = 28;
+      const c = document.createElement('canvas');
+      c.width = size; c.height = size;
+      const g = c.getContext('2d');
+      if (!g) continue;
+      g.beginPath(); // hull pointing north; the layer rotates it to the ship's heading
+      g.moveTo(14, 2); g.lineTo(21, 11); g.lineTo(21, 25); g.lineTo(7, 25); g.lineTo(7, 11); g.closePath();
+      g.fillStyle = color; g.fill();
+      g.lineWidth = 2; g.strokeStyle = 'rgba(0,0,0,0.85)'; g.stroke();
+      const img = g.getImageData(0, 0, size, size);
+      map.addImage(name, { width: size, height: size, data: new Uint8Array(img.data.buffer) });
+    }
+  }
+
+  private async nviiShipFetch(): Promise<void> {
+    const map = this.maplibreMap;
+    const src = map?.getSource('nvii-ships') as (maplibregl.GeoJSONSource | undefined);
+    if (!map || !src) return;
+    if (map.getZoom() < 6) { src.setData(JSON.parse('{"type":"FeatureCollection","features":[]}')); return; }
+    const c = map.getCenter();
+    try {
+      const resp = await fetch(`/camproxy/ships.json?lat=${c.lat.toFixed(2)}&lon=${c.lng.toFixed(2)}&z=${Math.round(map.getZoom())}`);
+      if (!resp.ok) return;
+      const data = await resp.json();
+      (this.maplibreMap?.getSource('nvii-ships') as (maplibregl.GeoJSONSource | undefined))?.setData(data);
+    } catch { /* keep the last positions */ }
+  }
+
+  private syncNviiShips(map: maplibregl.Map): void {
+    const want = !!this.state.layers.ais;
+    if (want && !map.getSource('nvii-ships')) {
+      this.nviiShipIcons(map);
+      map.addSource('nvii-ships', { type: 'geojson', data: JSON.parse('{"type":"FeatureCollection","features":[]}') });
+      map.addLayer({
+        id: 'nvii-ships-layer', type: 'symbol', source: 'nvii-ships',
+        layout: {
+          'icon-image': ['concat', 'nvii-ship-', ['get', 'k']],
+          'icon-size': ['interpolate', ['linear'], ['zoom'], 6, 0.3, 9, 0.5, 12, 0.8],
+          'icon-rotate': ['get', 'dir'], 'icon-rotation-alignment': 'map',
+          'icon-allow-overlap': true, 'icon-ignore-placement': true,
+        },
+        paint: { 'icon-opacity': ['case', ['get', 'moving'], 1, 0.55] },
+      });
+      if (!this.nviiShipBound) {
+        this.nviiShipBound = true;
+        map.on('moveend', () => { void this.nviiShipFetch(); });
+        map.on('click', 'nvii-ships-layer', (e) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          const pr = f.properties as Record<string, unknown>;
+          const wrap = document.createElement('div');
+          const header = document.createElement('div');
+          header.className = 'popup-header';
+          const title = document.createElement('span');
+          title.className = 'popup-title';
+          title.textContent = String(pr.name || `Ship ${String(pr.mmsi ?? '')}`);
+          header.append(title);
+          const body = document.createElement('div');
+          body.className = 'popup-body';
+          const line = (text: string): void => { const d = document.createElement('div'); d.textContent = text; body.append(d); };
+          const kinds: Record<string, string> = { mil: 'Military', tanker: 'Tanker', cargo: 'Cargo ship', pass: 'Passenger ship', other: 'Other vessel' };
+          line(`${kinds[String(pr.k)] ?? 'Vessel'} · ${pr.moving ? `${String(pr.sog)} kts, heading ${String(pr.dir)}°` : 'not moving'}`);
+          if (pr.dest) line(`Going to: ${String(pr.dest)}`);
+          line(`Maritime Mobile Service Identity ${String(pr.mmsi ?? '')}`);
+          if (pr.seen) line(`Last seen ${new Date(String(pr.seen)).toLocaleString()}`);
+          const credit = document.createElement('div');
+          credit.style.cssText = 'font-size:10px;opacity:.6;margin-top:3px';
+          credit.textContent = 'Position: Open Waters AIS, AISHub';
+          body.append(credit);
+          wrap.append(header, body);
+          new maplibregl.Popup({ closeButton: true, maxWidth: '300px' }).setLngLat(e.lngLat).setDOMContent(wrap).addTo(map);
+        });
+      }
+      if (!this.nviiShipTimer) {
+        this.nviiShipTimer = setInterval(() => { if (!document.hidden) void this.nviiShipFetch(); }, 30000);
+      }
+      void this.nviiShipFetch();
+    } else if (!want && map.getSource('nvii-ships')) {
+      if (map.getLayer('nvii-ships-layer')) map.removeLayer('nvii-ships-layer');
+      map.removeSource('nvii-ships');
+      if (this.nviiShipTimer) { clearInterval(this.nviiShipTimer); this.nviiShipTimer = null; }
+    }
+  }
+
+
+  // ---- nvii-poi (EMON): points handed in by the selfhost add-on (window event 'nvii-poi-set') ----
+  private nviiPoiBound = false;
+  private nviiPoiData: unknown = JSON.parse('{"type":"FeatureCollection","features":[]}');
+
+  private nviiPoiDraw(): void {
+    const map = this.maplibreMap;
+    if (!map) return;
+    try {
+      const src = map.getSource('nvii-poi') as (maplibregl.GeoJSONSource | undefined);
+      if (src) { src.setData(this.nviiPoiData as Parameters<maplibregl.GeoJSONSource['setData']>[0]); return; }
+      map.addSource('nvii-poi', { type: 'geojson', data: this.nviiPoiData as Parameters<maplibregl.GeoJSONSource['setData']>[0] });
+      map.addLayer({
+        id: 'nvii-poi-layer', type: 'circle', source: 'nvii-poi',
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['coalesce', ['get', 'n'], 1], 1, 7, 5, 11, 20, 16],
+          'circle-color': ['coalesce', ['get', 'color'], '#22d3ee'],
+          'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2, 'circle-opacity': 0.92,
+        },
+      });
+    } catch { /* style not ready yet: the next sync draws it */ }
+  }
+
+  private syncNviiPoi(map: maplibregl.Map): void {
+    if (!this.nviiPoiBound) {
+      this.nviiPoiBound = true;
+      window.addEventListener('nvii-poi-set', ((e: Event) => { this.nviiPoiData = (e as CustomEvent).detail; this.nviiPoiDraw(); }) as EventListener);
+      map.on('click', 'nvii-poi-layer', (e) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        window.dispatchEvent(new CustomEvent('nvii-map-pick', { detail: { layerId: 'nvii-poi', object: f.properties, x: e.point.x, y: e.point.y, coordinate: [e.lngLat.lng, e.lngLat.lat] } }));
+      });
+      map.on('mouseenter', 'nvii-poi-layer', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'nvii-poi-layer', () => { map.getCanvas().style.cursor = ''; });
+      const view = () => { const c = map.getCenter(); window.dispatchEvent(new CustomEvent('nvii-map-view', { detail: { lat: c.lat, lon: c.lng, zoom: map.getZoom() } })); };
+      map.on('moveend', view);
+      view();
+    }
+    if (!map.getSource('nvii-poi')) this.nviiPoiDraw();
   }
 
   private startWeatherRadar(): void {
@@ -5893,6 +6119,9 @@ export class DeckGLMap {
 
     const rawClickLayerId = info.layer?.id || '';
     const layerId = rawClickLayerId.endsWith('-ghost') ? rawClickLayerId.slice(0, -6) : rawClickLayerId;
+    try { // nvii-map-pick: let the EMON add-on show details for markers without their own popup
+      window.dispatchEvent(new CustomEvent('nvii-map-pick', { detail: { layerId, object: info.object, x: info.x, y: info.y, coordinate: info.coordinate } }));
+    } catch { /* never block the normal click */ }
 
     if (layerId === 'news-locations-layer') {
       this.onNewsClick?.(info.object as NewsLocationMarker);
@@ -7230,7 +7459,7 @@ export class DeckGLMap {
       },
       radiusMinPixels: 3,
       radiusMaxPixels: 20,
-      pickable: false,
+      pickable: true, // nvii-map-pick,
     });
   }
 
@@ -9007,7 +9236,58 @@ export class DeckGLMap {
     }
   }
 
-  public flashLocation(lat: number, lon: number, durationMs = 2000): void {
+
+  // ---- nvii-pulse-log (EMON): what the last "Live Event Pulse" flashes were ----
+  private nviiPulses: Array<{ lat: number; lon: number; title: string; source: string; link: string; at: number }> = [];
+  private nviiPulseOpen = false;
+
+  private nviiPulseLogAdd(wrapper: HTMLElement, lat: number, lon: number, info: { title: string; source?: string; link?: string }): void {
+    const link = info.link && /^https?:\/\//i.test(info.link) ? info.link : '';
+    if (this.nviiPulses.some((x) => x.title === info.title)) return;
+    this.nviiPulses.unshift({ lat, lon, title: info.title, source: info.source || 'News', link, at: Date.now() });
+    this.nviiPulses.length = Math.min(this.nviiPulses.length, 12);
+    this.nviiPulseLogRender(wrapper);
+  }
+
+  private nviiPulseLogRender(wrapper: HTMLElement): void {
+    let box = wrapper.querySelector('.nvii-pulse-log') as HTMLElement | null;
+    if (!box) {
+      box = document.createElement('div');
+      box.className = 'nvii-pulse-log';
+      box.style.cssText = 'position:absolute;left:96px;bottom:8px;z-index:1002;max-width:min(460px,60%);font-size:12px;line-height:1.35;background:var(--bg-secondary,#111);color:var(--text,#eee);border:1px solid var(--border,#444);box-shadow:0 2px 10px rgba(0,0,0,.6);pointer-events:auto;';
+      wrapper.appendChild(box);
+    }
+    box.replaceChildren();
+    const short = (t: string, n: number) => (t.length > n ? `${t.slice(0, n - 3)}...` : t);
+    const head = document.createElement('div');
+    head.style.cssText = 'padding:5px 9px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+    head.title = 'Headlines that just flashed on the map. Click to show or hide the list.';
+    const tag = document.createElement('strong');
+    tag.style.color = 'var(--accent,#fff)';
+    tag.textContent = `${this.nviiPulseOpen ? '▾' : '▸'} Live pulse (${this.nviiPulses.length}): `;
+    const latest = this.nviiPulses[0];
+    head.append(tag, document.createTextNode(latest ? `${latest.source}: ${short(latest.title, 70)}` : ''));
+    head.addEventListener('click', (ev) => { ev.stopPropagation(); this.nviiPulseOpen = !this.nviiPulseOpen; this.nviiPulseLogRender(wrapper); });
+    box.appendChild(head);
+    if (!this.nviiPulseOpen) return;
+    const list = document.createElement('div');
+    list.style.cssText = 'max-height:240px;overflow-y:auto;border-top:1px solid var(--border,#444);';
+    for (const pulse of this.nviiPulses) {
+      const row = document.createElement('div');
+      row.style.cssText = `padding:5px 9px;border-bottom:1px solid var(--border,#333);cursor:${pulse.link ? 'pointer' : 'default'};`;
+      const when = new Date(pulse.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const src = document.createElement('strong');
+      src.textContent = `${when} · ${pulse.source}: `;
+      row.append(src, document.createTextNode(short(pulse.title, 160)));
+      row.title = pulse.link ? 'Click: open the article. Hover: flash the place on the map.' : 'Hover: flash the place on the map.';
+      row.addEventListener('mouseenter', () => this.flashLocation(pulse.lat, pulse.lon, 2500));
+      if (pulse.link) row.addEventListener('click', (ev) => { ev.stopPropagation(); window.open(pulse.link, '_blank', 'noopener'); });
+      list.appendChild(row);
+    }
+    box.appendChild(list);
+  }
+
+  public flashLocation(lat: number, lon: number, durationMs = 2000, info?: { title: string; source?: string; link?: string }): void { // nvii-flash-label
     // Don't pan - project coordinates to screen position
     const screenPos = this.projectToScreen(lat, lon);
     if (!screenPos) return;
@@ -9046,7 +9326,29 @@ export class DeckGLMap {
     const wrapper = this.container.querySelector('.deckgl-map-wrapper');
     if (wrapper) {
       wrapper.appendChild(flashMarker);
-      setTimeout(() => flashMarker.remove(), durationMs);
+      setTimeout(() => flashMarker.remove(), info ? 3000 : durationMs); // nvii-pulse-log: short pulse, the log keeps the text
+      // nvii-flash-label: say what the flash is (news source + headline), clickable
+      if (info?.title && !/^emon\./.test(location.hostname)) this.nviiPulseLogAdd(wrapper as HTMLElement, lat, lon, info); // nvii-pulse-panel: EMON lists them in the Pulse panel
+      if (info?.title && wrapper.querySelectorAll('.nvii-flash-label').length < 2) {
+        const label = document.createElement('div');
+        label.className = 'nvii-flash-label';
+        const leftSide = screenPos.x > (wrapper as HTMLElement).clientWidth - 330;
+        label.style.cssText = `position:absolute;top:${screenPos.y}px;${leftSide ? `right:${(wrapper as HTMLElement).clientWidth - screenPos.x + 28}px` : `left:${screenPos.x + 28}px`};transform:translateY(-50%);max-width:300px;padding:5px 9px;font-size:12px;line-height:1.3;background:var(--bg-secondary,#111);color:var(--text,#eee);border:1px solid var(--accent,#fff);box-shadow:0 2px 10px rgba(0,0,0,.6);z-index:1001;pointer-events:auto;cursor:${info.link ? 'pointer' : 'default'};`;
+        const src = document.createElement('strong');
+        src.textContent = info.source ? `${info.source}: ` : 'News: ';
+        const text = document.createElement('span');
+        text.textContent = info.title.length > 140 ? `${info.title.slice(0, 137)}...` : info.title;
+        label.append(src, text);
+        const link = info.link;
+        if (link && /^https?:\/\//i.test(link)) {
+          label.title = 'Open the article';
+          label.addEventListener('click', (ev) => { ev.stopPropagation(); window.open(link, '_blank', 'noopener'); });
+        }
+        wrapper.appendChild(label);
+        const drop = () => label.remove();
+        setTimeout(drop, durationMs);
+        this.maplibreMap?.once('movestart', drop);
+      }
     }
   }
 

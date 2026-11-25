@@ -550,7 +550,7 @@ export class LatestBriefPanel extends Panel {
         logoDiv,
         h('div', { className: 'latest-brief-empty-title' }, 'Your brief is composing.'),
         h('div', { className: 'latest-brief-empty-body' },
-          `The editorial team at WorldMonitor is writing your ${data.issueDate} brief. Check back in a moment.`,
+          `The editorial team at EMON is writing your ${data.issueDate} brief. Check back in a moment.`,
         ),
       ),
     );
@@ -590,7 +590,7 @@ export class LatestBriefPanel extends Panel {
       h('div', { className: 'latest-brief-cover' },
         coverLogo,
         h('div', { className: 'latest-brief-cover-issue' }, data.dateLong),
-        h('div', { className: 'latest-brief-cover-title' }, 'WorldMonitor'),
+        h('div', { className: 'latest-brief-cover-title' }, 'EMON'),
         h('div', { className: 'latest-brief-cover-title' }, 'Brief.'),
         h('div', { className: 'latest-brief-cover-kicker' }, threadLabel),
       ),
@@ -606,7 +606,7 @@ export class LatestBriefPanel extends Panel {
     const shareBtn = h('button', {
       type: 'button',
       className: 'latest-brief-share',
-      'aria-label': 'Share WorldMonitor — copies a referral link',
+      'aria-label': 'Share EMON — copies a referral link',
       disabled: true,
     }, 'Share ↗');
     const shareStatus = h('span', {

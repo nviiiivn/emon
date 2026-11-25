@@ -85,7 +85,7 @@ export const SETTINGS_GROUPS = [
       {
         id: 'notifications', labelKey: 'header.tabNotifications', descKey: 'settings.descriptions.notifications', owner: 'shell',
         keywordsKey: 'settings.keywords.notifications',
-        available: (f) => !f.isDesktopApp,
+        available: () => false, // nvii-mine-2: alerts need a worldmonitor.app account
       },
     ],
   },
@@ -113,16 +113,18 @@ export const SETTINGS_GROUPS = [
   {
     id: 'developer', labelKey: 'settings.groups.developer', sections: [
       {
-        id: 'api-keys', labelKey: 'settings.sections.apiKeys', descKey: 'settings.descriptions.apiKeys', owner: 'shell', badge: 'pro',
+        id: 'api-keys', labelKey: 'settings.sections.apiKeys', descKey: 'settings.descriptions.apiKeys', owner: 'shell',
+        available: () => false, // nvii-mine-2: worldmonitor.app keys / desktop key
         keywordsKey: 'settings.keywords.apiKeys',
       },
       {
-        id: 'embeds', labelKey: 'settings.sections.embeds', descKey: 'settings.descriptions.embeds', owner: 'shell', badge: 'pro',
-        available: (f) => f.embedAccess,
+        id: 'embeds', labelKey: 'settings.sections.embeds', descKey: 'settings.descriptions.embeds', owner: 'shell',
+        available: () => false, // nvii-mine-2
         keywordsKey: 'settings.keywords.embeds',
       },
       {
         id: 'mcp-clients', labelKey: 'settings.sections.aiAgents', descKey: 'settings.descriptions.aiAgents', owner: 'shell',
+        available: () => false, // nvii-mine-2: connects agents to worldmonitor.app/mcp with a World Monitor account
         keywordsKey: 'settings.keywords.aiAgents',
       },
     ],

@@ -61,7 +61,7 @@ export function renderBootFailureScreen(error: unknown): void {
   const brand = styled(
     'p',
     'display:flex;align-items:center;gap:8px;margin:0 0 36px;font-size:15px;font-weight:700;',
-    'World Monitor',
+    'EMON Earth Monitor',
   );
   brand.prepend(
     styled('span', 'width:10px;height:10px;border-radius:2px;background:#4ade80;flex:none;'),
@@ -83,7 +83,7 @@ export function renderBootFailureScreen(error: unknown): void {
   const lede = styled(
     'p',
     'margin:0;color:#a8b8ad;font-size:17px;',
-    'Something went wrong while World Monitor was loading. This is usually temporary — reloading fixes most cases.',
+    'Something went wrong while EMON Earth Monitor was loading. This is usually temporary — reloading fixes most cases.',
   );
 
   const detail = styled(
@@ -115,7 +115,7 @@ export function renderBootFailureScreen(error: unknown): void {
   const home = styled(
     'a',
     'display:inline-flex;align-items:center;min-height:44px;color:#4ade80;font-size:15px;text-decoration:none;outline-offset:3px;',
-    'World Monitor homepage',
+    'EMON Earth Monitor homepage',
   );
   home.href = '/';
 

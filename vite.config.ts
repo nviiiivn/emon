@@ -170,6 +170,7 @@ const PANEL_CLUSTER: Record<string, PanelChunkName> = {
   // Disasters / climate / connectivity / society
   ClimateAnomaly: 'panels-risk', ReservoirLevels: 'panels-risk', Counters: 'panels-risk',
   DiseaseOutbreaks: 'panels-risk',
+  NviiPulse: 'panels-risk', // nvii-pulse-panel (EMON)
   Displacement: 'panels-risk', GeoHubs: 'panels-risk',
   Giving: 'panels-risk', InternetDisruptions: 'panels-risk',
   PopulationExposure: 'panels-risk', RadiationWatch: 'panels-risk',

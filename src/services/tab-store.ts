@@ -40,6 +40,8 @@ export interface PanelTab {
    * applied when the tab becomes active, and shared with a team dashboard.
    */
   panelFilters?: PanelFilters;
+  /** nvii-tab-map (EMON): the map layers, position and time range this tab shows. */
+  nviiMap?: { layers?: Record<string, boolean>; lat?: number; lon?: number; zoom?: number; view?: string; timeRange?: string };
 }
 
 export interface TabsState {

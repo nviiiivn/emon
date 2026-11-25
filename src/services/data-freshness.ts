@@ -261,7 +261,8 @@ class DataFreshnessTracker {
         : maxStaleMin;
       source.healthStatus = update.status;
       source.freshnessEvidence = 'seed-health';
-      source.lastError = this.healthStatusIsError(update.status) ? update.status : null;
+      // nvii-seed-error: a refresh that failed but still has data shows its age (Fresh/Stale), not "Error"
+      source.lastError = this.healthStatusIsError(update.status) && !(update.status === 'SEED_ERROR' && records > 0) ? update.status : null;
       source.lastUpdate = this.healthStatusHasNoData(update.status)
         ? null
         : ageMin !== null

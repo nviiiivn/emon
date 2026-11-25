@@ -1,3 +1,4 @@
+import { getCountryAtCoordinates } from '@/services/country-geometry';
 import type { AppContext, AppModule } from '@/app/app-context';
 import { enqueueSentryCall } from '@/bootstrap/sentry-defer';
 import { isAnalyticsHost, track } from '@/services/analytics';
@@ -47,6 +48,7 @@ import {
   type ScopedDigest,
 } from '@/app/news-digest-acceptance';
 import { INTEL_HOTSPOTS, CONFLICT_ZONES } from '@/config/geo';
+import { recordNviiPulse } from '@/services/nvii-pulse'; // nvii-pulse-panel
 import { tokenizeForMatch, matchKeyword } from '@/utils/keyword-match';
 import { withTimeout } from '@/utils/with-timeout';
 import { assessCorroboration, evidenceFromCluster } from '@/utils/corroboration-flag';
@@ -1401,7 +1403,7 @@ export class DataLoaderManager implements AppModule {
       tasks.push({ name: 'outages', task: () => runGuarded('outages', () => this.loadOutages()) });
     }
 
-    if (this.hydratesPanel('satellite-fires', ['full']) && (shouldLoad('satellite-fires') || this.ctx.mapLayers.natural)) {
+    if (this.hydratesPanel('satellite-fires', ['full']) && (shouldLoad('satellite-fires') || this.ctx.mapLayers.natural || this.ctx.mapLayers.fires)) { // nvii-fires-boot
       // Lock under the map-layer key ('fires') so a hydration load and a
       // loadDataForLayer('fires') toggle one-flight each other instead of
       // double-fetching (loadFirmsData has no internal guard). `name` stays
@@ -1664,9 +1666,9 @@ export class DataLoaderManager implements AppModule {
     }
   }
 
-  private findFlashLocation(title: string): { lat: number; lon: number } | null {
+  private findFlashLocation(title: string): { lat: number; lon: number; name?: string } | null { // nvii-pulse-panel: + place name
     const tokens = tokenizeForMatch(title);
-    let bestMatch: { lat: number; lon: number; matches: number } | null = null;
+    let bestMatch: { lat: number; lon: number; matches: number; name?: string } | null = null;
 
     const countKeywordMatches = (keywords: string[] | undefined): number => {
       if (!keywords) return 0;
@@ -1683,14 +1685,14 @@ export class DataLoaderManager implements AppModule {
     for (const hotspot of INTEL_HOTSPOTS) {
       const matches = countKeywordMatches(hotspot.keywords);
       if (matches > 0 && (!bestMatch || matches > bestMatch.matches)) {
-        bestMatch = { lat: hotspot.lat, lon: hotspot.lon, matches };
+        bestMatch = { lat: hotspot.lat, lon: hotspot.lon, matches, name: hotspot.name };
       }
     }
 
     for (const conflict of CONFLICT_ZONES) {
       const matches = countKeywordMatches(conflict.keywords);
       if (matches > 0 && (!bestMatch || matches > bestMatch.matches)) {
-        bestMatch = { lat: conflict.center[1], lon: conflict.center[0], matches };
+        bestMatch = { lat: conflict.center[1], lon: conflict.center[0], matches, name: conflict.name };
       }
     }
 
@@ -1699,7 +1701,7 @@ export class DataLoaderManager implements AppModule {
 
   private flashMapForNews(items: NewsItem[]): void {
     if (!this.ctx.map || !this.ctx.initialLoadComplete) return;
-    if (!getAiFlowSettings().mapNewsFlash) return;
+    const nviiCircles = getAiFlowSettings().mapNewsFlash; // nvii-pulse-panel: the Pulse panel lists them even with the circles off
     const now = Date.now();
 
     for (const [key, timestamp] of this.mapFlashCache.entries()) {
@@ -1718,7 +1720,8 @@ export class DataLoaderManager implements AppModule {
       const location = this.findFlashLocation(item.title);
       if (!location) continue;
 
-      this.ctx.map.flashLocation(location.lat, location.lon);
+      if (nviiCircles) this.ctx.map.flashLocation(location.lat, location.lon, 12000, { title: item.title, source: item.source, link: item.link }); // nvii-flash-label
+      recordNviiPulse({ lat: location.lat, lon: location.lon, place: location.name || '', title: item.title, source: item.source || '', link: item.link || '', at: now, circle: nviiCircles }); // nvii-pulse-panel
       this.mapFlashCache.set(cacheKey, now);
     }
   }
@@ -4032,7 +4035,42 @@ export class DataLoaderManager implements AppModule {
       }));
       const ucdp = enrichEventsWithExposure(ucdpEvents, perSourceLimit, true);
       const unrest = enrichEventsWithExposure(unrestEvents, perSourceLimit);
-      const exposures = [...unrest.exposures, ...ucdp.exposures]
+      // nvii-hazard-exposure: UCDP is empty on this copy and unrest points are country-level, so strong quakes
+      // and satellite fires (exact points) also count toward who lives near an event.
+      const NVII_US = /^(alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|florida|georgia|hawaii|idaho|illinois|indiana|iowa|kansas|kentucky|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|new york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|washington|west virginia|wisconsin|wyoming|puerto rico|ak|al|ar|az|ca|co|ct|de|fl|ga|hi|ia|id|il|in|ks|ky|la|ma|md|me|mi|mn|mo|ms|mt|nc|nd|ne|nh|nj|nm|nv|ny|oh|ok|or|pa|ri|sc|sd|tn|tx|ut|va|vt|wa|wi|wv|wy|pr)$/i;
+      const NVII_CA = /^(alberta|british columbia|manitoba|new brunswick|newfoundland and labrador|northwest territories|nova scotia|nunavut|ontario|prince edward island|quebec|saskatchewan|yukon|parks canada)$/i;
+      const nviiCountry = (lat: number, lon: number, label = ''): string => {
+        try { const hit = getCountryAtCoordinates(lat, lon)?.code; if (hit) return hit; } catch { /* geometry not loaded yet */ }
+        const seg = (label.split(',').pop() ?? '').trim();
+        if (!seg) return '';
+        if (NVII_US.test(seg)) return 'US';
+        if (NVII_CA.test(seg)) return 'CA';
+        return seg;
+      };
+      // The quake and fire loaders run on their own schedule and are often not in yet; ask for them here.
+      let nviiQuakeSrc: unknown[] = this.ctx.intelligenceCache.earthquakes ?? [];
+      if (nviiQuakeSrc.length === 0) { try { nviiQuakeSrc = await fetchEarthquakes(); } catch { nviiQuakeSrc = []; } }
+      let nviiFireSrc: Array<{ lat: number; lon: number; frp: number; region: string }> = (this.ctx.intelligenceCache.satelliteFires ?? []).map(f => { const r = f as unknown as { lat: number; lon: number; frp?: number; region?: string }; return { lat: r.lat, lon: r.lon, frp: r.frp ?? 0, region: r.region ?? '' }; });
+      if (nviiFireSrc.length === 0) {
+        try {
+          const r = await fetchAllFires(1);
+          nviiFireSrc = flattenFires(r.regions).map(f => ({ lat: f.location?.latitude ?? 0, lon: f.location?.longitude ?? 0, frp: f.frp, region: f.region }));
+        } catch { nviiFireSrc = []; }
+      }
+      const nviiQuakes = nviiQuakeSrc
+        .map(q => {
+          const r = q as unknown as { id: string; place?: string; magnitude: number; lat?: number; lon?: number; location?: { latitude?: number; longitude?: number } };
+          return { id: r.id, place: r.place ?? '', magnitude: r.magnitude, lat: r.lat ?? r.location?.latitude ?? NaN, lon: r.lon ?? r.location?.longitude ?? NaN };
+        })
+        .filter(q => q.magnitude >= 4.5 && Number.isFinite(q.lat) && Number.isFinite(q.lon))
+        .sort((x, y) => y.magnitude - x.magnitude).slice(0, 60)
+        .map(q => ({ id: `eq-${q.id}`, lat: q.lat, lon: q.lon, type: 'earthquake', name: `M${q.magnitude.toFixed(1)} ${q.place}`, country: nviiCountry(q.lat, q.lon, q.place), hasPreciseLocation: true }));
+      const nviiFires = nviiFireSrc
+        .filter(f => f.frp >= 30)
+        .sort((x, y) => y.frp - x.frp).slice(0, 80)
+        .map((f, i) => ({ id: `fire-${i}-${f.lat.toFixed(2)}-${f.lon.toFixed(2)}`, lat: f.lat, lon: f.lon, type: 'fire', name: `Fire, ${f.region}`, country: nviiCountry(f.lat, f.lon, f.region), hasPreciseLocation: true }));
+      const nviiHazards = enrichEventsWithExposure([...nviiQuakes, ...nviiFires].filter(e => e.country), perSourceLimit);
+      const exposures = [...unrest.exposures, ...ucdp.exposures, ...nviiHazards.exposures]
         .sort((a, b) => b.exposedPopulation - a.exposedPopulation);
       const ucdpCoverage = ucdpInput?.source === 'full-feed' ? ucdp.coverage : ucdpInput?.coverage;
       const coverage = ucdpCoverage

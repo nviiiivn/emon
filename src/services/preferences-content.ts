@@ -52,7 +52,6 @@ import { setTrustedHtml, trustedHtml } from '@/utils/dom-utils';
 import type { PreferenceSectionId } from '@/config/settings-sections';
 
 
-const DESKTOP_RELEASES_URL = 'https://github.com/koala73/worldmonitor/releases';
 
 export interface PreferencesHost {
   isDesktopApp: boolean;
@@ -317,7 +316,6 @@ const aiSection: PreferenceSectionSpec = {
         <div class="ai-flow-cta">
           <div class="ai-flow-cta-title">${t('components.insights.aiFlowOllamaCta')}</div>
           <div class="ai-flow-cta-desc">${t('components.insights.aiFlowOllamaCtaDesc')}</div>
-          <a href="${DESKTOP_RELEASES_URL}" target="_blank" rel="noopener noreferrer" class="ai-flow-cta-link">${t('components.insights.aiFlowDownloadDesktop')}</a>
         </div>
       `;
     }

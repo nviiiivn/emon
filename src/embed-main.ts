@@ -25,7 +25,7 @@ function warnOnDeprecatedCredential(kind: string | undefined): void {
   if (!kind) return;
   const what = kind === 'enterprise_key'
     ? 'an enterprise key, which bypasses entitlement checks entirely'
-    : 'a World Monitor user API key (wm_…), which unlocks your whole paid REST allowance';
+    : 'an EMON Earth Monitor user API key (wm_…), which unlocks your whole paid REST allowance';
   console.warn(
     `[worldmonitor-embed] This embed authenticates with ${what}. It sits in your page's public HTML, `
     + 'where anyone can read and reuse it. Replace it with a scoped embed key (wme_…): '
@@ -61,7 +61,7 @@ async function bootEmbed(): Promise<void> {
     await initI18n();
 
     if (!params.panel) {
-      mountError(root, `Unknown World Monitor embed panel "${params.requestedPanel}".`);
+      mountError(root, `Unknown EMON Earth Monitor embed panel "${params.requestedPanel}".`);
       document.body.dataset.embedReady = 'error';
       return;
     }
@@ -70,15 +70,15 @@ async function bootEmbed(): Promise<void> {
     if (getEmbedPanelFreeTier(params.panel) === null) {
       apiKey = await apiKeyPromise;
       if (!apiKey) {
-        mountError(root, 'This World Monitor panel requires an embedding API key from the partner account.');
+        mountError(root, 'This EMON Earth Monitor panel requires an embedding API key from the partner account.');
         document.body.dataset.embedReady = 'error';
         return;
       }
       const entitlement = await fetchEmbedEntitlement(params.panel, apiKey);
       if (!entitlement.ok) {
         const denied = entitlement.status === 403
-          ? 'The embedding account is not entitled to this World Monitor panel.'
-          : 'World Monitor could not verify the embedding API key for this panel.';
+          ? 'The embedding account is not entitled to this EMON Earth Monitor panel.'
+          : 'EMON Earth Monitor could not verify the embedding API key for this panel.';
         mountError(root, denied);
         document.body.dataset.embedReady = 'error';
         return;
@@ -98,15 +98,15 @@ async function bootEmbed(): Promise<void> {
     }
 
     document.title = params.panel === 'map'
-      ? 'World Monitor Live Map Embed'
-      : 'World Monitor Panel Embed';
+      ? 'EMON Earth Monitor Live Map Embed'
+      : 'EMON Earth Monitor Panel Embed';
     document.body.dataset.embedReady = 'true';
     if (destroy) {
       window.addEventListener('pagehide', destroy, { once: true });
     }
   } catch (error) {
     console.error('[embed] Failed to boot panel:', error);
-    mountError(root, 'World Monitor embed could not load.');
+    mountError(root, 'EMON Earth Monitor embed could not load.');
     document.body.dataset.embedReady = 'error';
   }
 }

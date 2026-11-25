@@ -402,6 +402,8 @@ export class CountryIntelManager implements AppModule {
   private async setupCountryIntel(): Promise<void> {
     if (!this.ctx.map) return;
     this.ctx.map.onCountryClicked((countryClick) => {
+      // nvii-no-country-click: a plain map click must not open the country panel on this copy (right-click still offers it)
+      if (/^emon\./.test(location.hostname)) return;
       if (countryClick.code && countryClick.name) {
         trackCountrySelected(countryClick.code, countryClick.name, 'map');
         this.openFromMap(() => this.openCountryBriefByCode(countryClick.code!, countryClick.name!));
