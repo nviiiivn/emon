@@ -1717,7 +1717,7 @@
       },
       "infoTooltip": "<strong>Methodology</strong><ul><li><strong>U</strong>nrest: civil disorder & protests</li><li><strong>C</strong>onflict: armed conflict intensity</li><li><strong>S</strong>ecurity: military flights/vessels over territory</li><li><strong>I</strong>nformation: news velocity and focal point correlation</li><li>Hotspot proximity boost (strategic locations)</li></ul><em>U:C:S:I values show component scores.</em> Focal Point Detection correlates news entities with map signals for accurate scoring.",
       "_methodologyLink_translatorNote": "TRANSLATION TODO (#3725): localize methodologyLink. English value is shipped to every locale as a stop-gap so the methodology link is present in all languages. Safe to translate independently of infoTooltip — the two render as a single tooltip via concatenation in CIIPanel.ts.",
-      "methodologyLink": "Includes per-country baseline + event multiplier — see /docs/methodology/cii-risk-scores for the published table"
+      "methodologyLink": "Includes per-country baseline + event multiplier"
     },
     "insights": {
       "noStories": "No breaking or multi-source stories yet",
@@ -2652,7 +2652,7 @@
     },
     "diseaseOutbreaks": {
       "infoTooltip": "<strong>Disease Outbreaks</strong> Active outbreak alerts from WHO, ProMED, and health ministries. Tracks confirmed outbreaks, affected regions, case counts, and threat levels. Updated as new reports are published.",
-      "methodologyNote": "Alert / Warning / Watch levels come from an editorial keyword classifier — see /docs/methodology/disease-alert-level for the keyword table and limitations.",
+      "methodologyNote": "Alert / Warning / Watch levels come from an editorial keyword classifier.",
       "title": "Disease Outbreaks",
       "empty": "No outbreaks match filter",
       "sourceFallback": "Source",
@@ -3167,7 +3167,7 @@
     },
     "chokepointStrip": {
       "title": "Chokepoint Status",
-      "infoTooltip": "Live status for the seven global oil & gas shipping chokepoints. Flow estimates calibrated from Portwatch vessel carrying capacity + ship tracking observations. See /docs/methodology/chokepoints for methodology.",
+      "infoTooltip": "Live status for the seven global oil & gas shipping chokepoints. Flow estimates calibrated from Portwatch vessel carrying capacity + ship tracking observations.",
       "unknown": "unknown",
       "shortName": {
         "hormuzStrait": "Hormuz",

@@ -1,6 +1,5 @@
 import type { GetForecastScorecardResponse } from '@/services/forecast';
 import { getLocale, t } from '@/services/i18n';
-import { isDesktopRuntime } from '@/services/runtime';
 import { CANONICAL_ORIGIN } from '@/config/schema-graph-ids';
 import { escapeHtml } from '@/utils/sanitize';
 import { STANDING_ACCURACY_AUDIT, forecastAccuracyAudit, headlineFamilyGate, type ForecastAccuracyAudit } from '../../shared/forecast-accuracy-audit';
@@ -137,7 +136,7 @@ export function renderReliabilityBadge(
 ): string {
   if (audit) {
     const text = t('components.forecast.audit.label');
-    return `<a class="fc-reliability" data-fc-reliability-state="under-audit" href="${escapeHtml(recordHref(isDesktopRuntime()))}" aria-label="${escapeHtml(`${text}. ${auditHint(audit)}`)}">${escapeHtml(text)}</a>`;
+    return `<span class="fc-reliability" data-fc-reliability-state="under-audit" aria-label="${escapeHtml(`${text}. ${auditHint(audit)}`)}">${escapeHtml(text)}</span>`;
   }
   // A domain the scorecard has no published row for has graded nothing yet, so it reads as unmeasured with n=0.
   if (!table) return '';
@@ -154,7 +153,7 @@ export function renderReliabilityBadge(
       ];
   // Stale and n lead: the badge is one line with an ellipsis, so a narrow card cuts the tail.
   const text = table.stale ? `${t('components.forecast.record.stale')} · ${main}` : main;
-  return `<a class="fc-reliability" data-fc-reliability-state="${r.kind}" href="${escapeHtml(reliabilityHref(isDesktopRuntime()))}" aria-label="${escapeHtml(`${text}. ${hint}`)}">${escapeHtml(text)}</a>`;
+  return `<span class="fc-reliability" data-fc-reliability-state="${r.kind}" aria-label="${escapeHtml(`${text}. ${hint}`)}">${escapeHtml(text)}</span>`;
 }
 
 const OUTCOMES = ['YES', 'NO', 'VOID'] as const;
@@ -284,7 +283,7 @@ export function recordHref(desktop: boolean): string {
 }
 
 function link(): string {
-  return `<a class="fc-record-link" href="${escapeHtml(recordHref(isDesktopRuntime()))}">${escapeHtml(t('components.forecast.record.fullRecord'))}</a>`;
+  return ''; // nvii-mine-3: the "full record" page (/accuracy/) is upstream's
 }
 
 function wrap(kind: ForecastRecord['kind'], inner: string): string {

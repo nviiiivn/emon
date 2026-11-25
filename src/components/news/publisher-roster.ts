@@ -86,8 +86,7 @@ export function renderPublisherRosterHtml(view: PublisherRosterView): string {
     + `<span class="publisher-feeds">${escapeHtml(row.feeds)}</span>`
     + `${row.sameCopy ? `<span class="publisher-same-copy">${escapeHtml(row.sameCopy)}</span>` : ''}</li>`).join('');
   return `<details class="publisher-roster"><summary>${escapeHtml(view.summary)}</summary><ol>${rows}</ol>`
-    + `<p class="tier-legend">${escapeHtml(view.legend)} `
-    + `<a href="${escapeHtml(view.docsHref)}" target="_blank" rel="noopener noreferrer">${escapeHtml(view.docsLabel)}</a></p></details>`;
+    + `<p class="tier-legend">${escapeHtml(view.legend)}</p></details>`;
 }
 
 /** The same markup as renderPublisherRosterHtml, built as nodes for DOM-builder panels. */
@@ -101,6 +100,5 @@ export function renderPublisherRosterElement(view: PublisherRosterView): HTMLEle
       row.risk ? badge(row.risk) : null,
       h('span', { className: 'publisher-feeds' }, row.feeds),
       row.sameCopy ? h('span', { className: 'publisher-same-copy' }, row.sameCopy) : null))),
-    h('p', { className: 'tier-legend' }, `${view.legend} `,
-      h('a', { href: view.docsHref, target: '_blank', rel: 'noopener noreferrer' }, view.docsLabel)));
+    h('p', { className: 'tier-legend' }, view.legend));
 }

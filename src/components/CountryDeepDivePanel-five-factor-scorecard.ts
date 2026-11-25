@@ -107,12 +107,6 @@ export function renderFiveFactorScorecardSection(
     h('div', { className: 'cdp-scorecard-footer' },
       'Higher scores indicate stronger capacity. Coverage measures available evidence, independently of the score. ',
       translate('countryBrief.fiveFactorScorecard.methodologyVersion', { version: scorecard.methodologyVersion }),
-      ' · ',
-      h('a', {
-        href: '/docs/methodology/five-factor-scorecard',
-        target: '_blank',
-        rel: 'noopener noreferrer',
-      }, translate('countryBrief.fiveFactorScorecard.methodologyLink')),
     ),
   );
   return container;

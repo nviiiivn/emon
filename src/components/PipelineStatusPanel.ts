@@ -197,8 +197,7 @@ export class PipelineStatusPanel extends Panel {
       defaultRowSpan: 2,
       infoTooltip:
         'Curated registry of critical oil and gas pipelines. Public badge is derived from ' +
-        'evidence (operator statements, sanction refs, commercial state, physical signals) — ' +
-        'see /docs/methodology/pipelines for the classifier spec.',
+        'evidence (operator statements, sanction refs, commercial state, physical signals).',
     });
     // Listen for DeckGLMap pipeline clicks. Loose coupling via window event
     // keeps the map and the panel decoupled — if the panel isn't mounted, the

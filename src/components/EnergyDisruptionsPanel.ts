@@ -99,7 +99,7 @@ export class EnergyDisruptionsPanel extends Panel {
         'storage facilities — sabotage, sanctions, maintenance, mechanical, ' +
         'weather, war, commercial. Each event ties back to a seeded asset; ' +
         'click a row to jump to the pipeline / storage panel with that event ' +
-        'highlighted. See /docs/methodology/disruptions for the schema.',
+        'highlighted.',
     });
     this.scopeFilter = new PanelScopeFilter({ content: this.content, onChange: () => this.render() });
 
@@ -251,7 +251,6 @@ export class EnergyDisruptionsPanel extends Panel {
       updatedAt: this.data.fetchedAt,
       classifierVersion: this.data.classifierVersion,
       creditName: 'Operator press + regulator filings + OFAC/EU sanctions + major wire',
-      creditUrl: '/docs/methodology/disruptions',
     });
 
     this.setSafeContent(unsafeRawHtml(`

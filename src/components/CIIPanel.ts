@@ -236,13 +236,8 @@ export class CIIPanel extends Panel {
   }
 
   private buildMethodologyFooter(): HTMLElement {
-    return h('div', { className: 'cii-methodology-footer' },
-      h('a', {
-        href: CII_METHODOLOGY_HREF,
-        target: '_blank',
-        rel: 'noopener noreferrer',
-      }, t('components.cii.methodologyLink')),
-    );
+    // nvii-mine-3: the methodology page is on worldmonitor.app's docs site, which EMON does not have
+    return h('div', { className: 'cii-methodology-footer' });
   }
 
   private formatCachedSourceDetail(cached: Pick<CachedRiskScores, 'degraded' | 'stale'>): string {

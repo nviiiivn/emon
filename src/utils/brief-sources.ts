@@ -25,7 +25,7 @@ export interface BriefSourceCandidate {
 }
 
 const DEFAULT_MAX_SOURCES = 6;
-const BRIEF_SOURCES_METHODOLOGY_HREF = '/docs/methodology/news-digest-and-briefing';
+const BRIEF_SOURCES_METHODOLOGY_HREF = ''; // nvii-mine-3: was an upstream docs page; empty = no Methodology link
 
 export function normalizeBriefSourceUrl(value: unknown): string {
   return normalizeInsightSourceUrl(value);

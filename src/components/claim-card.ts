@@ -5,7 +5,6 @@
  */
 import type { ClaimCard, ClaimCardHeadline, FactCheckResult } from '@/services/verify-claim';
 import { escapeHtml, sanitizeUrl } from '@/utils/sanitize';
-import { TIER_DOCS_HREF } from '@/utils/tier-docs';
 
 export type VerdictView = {
   readonly tone: 'corroborated' | 'single' | 'low-tier' | 'not-found';
@@ -120,7 +119,7 @@ function publishersHtml(card: ClaimCard): string {
   return `<section class="vc-section" aria-labelledby="vc-publishers">
       <h2 id="vc-publishers">Publishers</h2>
       <ul class="pub-list">${rows}${more}</ul>
-      <p class="vc-note">Tiers rank sources; they do not judge this claim. <a href="${escapeHtml(TIER_DOCS_HREF)}" target="_blank" rel="noopener">How tiers are assigned</a></p>
+      <p class="vc-note">Tiers rank sources; they do not judge this claim.</p>
     </section>`;
 }
 

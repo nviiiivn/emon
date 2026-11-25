@@ -600,7 +600,7 @@
       "layers": "Введіть \"military\" або \"finance\" для пресетів шарів",
       "time": "Введіть \"1h\", \"24h\" або \"7d\", щоб відфільтрувати за часом",
       "settings": "Введіть \"dark mode\", \"settings\" або \"fullscreen\"",
-      "flight": "Пошук активних рейсів за позивним (PRO)",
+      "flight": "Пошук активних рейсів за позивним",
       "mapExample": "iran",
       "panelExample": "news",
       "briefExample": "brief china",

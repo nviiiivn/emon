@@ -1,5 +1,4 @@
 import {
-  CANONICAL_ORIGIN,
   ORGANIZATION_ID,
   WEBSITE_ID,
 } from './schema-graph-ids';
@@ -31,20 +30,7 @@ export function renderVariantNoscriptMainHtml(variant: VariantSeoKey, meta: Vari
   return `<main id="dashboard-noscript" class="dashboard-noscript">
         <h2>${escHtml(meta.siteName)} requires JavaScript for the live map</h2>
         ${about}
-        <p>Visit the <a href="${CANONICAL_ORIGIN}">World Monitor homepage</a> for the platform overview, or use the indexable reference pages below without enabling JavaScript.</p>
-        <nav aria-label="${escHtml(meta.siteName)} references">
-          <ul>
-            <li><a href="${CANONICAL_ORIGIN}countries/">Country intelligence</a></li>
-            <li><a href="${CANONICAL_ORIGIN}chokepoints/">Maritime chokepoints</a></li>
-            <li><a href="${CANONICAL_ORIGIN}crises/">Crisis trackers</a></li>
-            <li><a href="${CANONICAL_ORIGIN}tools/">Live tools</a></li>
-            <li><a href="${CANONICAL_ORIGIN}research/">Research reports</a></li>
-            <li><a href="${CANONICAL_ORIGIN}blog/">Blog</a></li>
-            <li><a href="${CANONICAL_ORIGIN}docs/documentation">Documentation</a></li>
-            <li><a href="${CANONICAL_ORIGIN}pro#pricing">Pricing</a></li>
-            <li><a href="https://github.com/koala73/worldmonitor">GitHub</a></li>
-          </ul>
-        </nav>
+        <p>Source code: <a href="https://github.com/nviiiivn/emon">github.com/nviiiivn/emon</a>. Built on koala73/worldmonitor (AGPL-3.0).</p>
       </main>`;
 }
 
@@ -140,8 +126,8 @@ function variantBreadcrumbJsonLd(meta: VariantMeta): string {
       {
         '@type': 'ListItem',
         position: 1,
-        name: 'World Monitor',
-        item: CANONICAL_ORIGIN,
+        name: 'EMON Earth Monitor',
+        item: 'https://emon.alola.lol/',
       },
       {
         '@type': 'ListItem',
@@ -224,7 +210,7 @@ export function renderVariantDashboardHtml(fullDashboardHtml: string, variant: s
   // the exact-count guard makes a reintroduced ?lang alternate fail the build.
   html = replaceCounted(
     html,
-    /(<link rel="alternate" hreflang="[^"]+" href=")https:\/\/www\.worldmonitor\.app\/dashboard((?:\?[^"]*)?" \/>)/g,
+    /(<link rel="alternate" hreflang="[^"]+" href=")https:\/\/emon\.alola\.lol\/((?:\?[^"]*)?" \/>)/g,
     (_m, a, b) => `${a}${escHtml(meta.url)}${b}`,
     TWO,
     'hreflang alternates',
